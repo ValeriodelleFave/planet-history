@@ -106,6 +106,23 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding : ActivityMainBinding
     private var markerManager = MarkerManager()
 
+    // Override Methods
+    override fun onStart() {
+        super.onStart()
+        if (!hasLocationPermission()) {
+            requestLocationPermission()
+        } else if (!isLocationServiceEnabled()) {
+            showLocationServiceDisabledDialog()
+        } else {
+            startLocationUpdates()
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        stopLocationUpdates()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -116,7 +133,10 @@ class MainActivity : AppCompatActivity() {
 
         setupOnClickListener()
 
+        
     }
+
+    // Private Methods
 
     private fun setupOnClickListener(){
         setupCategoryButtonsOnClickListener()
@@ -137,19 +157,19 @@ class MainActivity : AppCompatActivity() {
         binding.run {
             categoryLayout.run {
                 btnMonumenti.setOnClickListener {
-                    disableMonumenti()
+                    disableCategory(MarkerTypes.MONUMENTS)
                 }
                 btnCTM.setOnClickListener {
-                    disableCTM()
+                    disableCategory(MarkerTypes.CTM)
                 }
                 btnCuriosita.setOnClickListener {
-                    disableCuriosita()
+                    disableCategory(MarkerTypes.CURIOSITY)
                 }
                 btnParchi.setOnClickListener {
-                    disableParchi()
+                    disableCategory(MarkerTypes.PARKS)
                 }
                 btnEpoche.setOnClickListener {
-                    disableEpoche()
+                    disableCategory(MarkerTypes.AGES)
                 }
             }
 
@@ -161,188 +181,257 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-
     }
 
-    private fun test () {
-        //TODO  context.resources.openRawResource(resourceId) per il recupero del json
+    private fun disableCategory(type: MarkerTypes){ // TODO: Refactor disableCategory Logic
+        when(type) {
+            MarkerTypes.MONUMENTS -> {
+                if (monumentiEnabled) {
+                    for (marker in ListaMonumenti) {
+                        pointAnnotationManager?.delete(marker)
+                    }
+                } else {
+                    for (marker in ListaMonumenti) {
+                        val options = PointAnnotationOptions().withPoint(marker.point).withIconImage(bitmapFromDrawableRes(this@MainActivity, R.drawable.green_marker)!!)
+                        pointAnnotationManager?.create(options)
+                    }
+                }
+                monumentiEnabled = !monumentiEnabled
+            }
+            MarkerTypes.CTM-> {
+                if (ctmEnabled) {
+                    for (marker in ListaCTM) {
+                        pointAnnotationManager?.delete(marker)
+                    }
+                } else {
+                    for (marker in ListaCTM) {
+                        val options = PointAnnotationOptions().withPoint(marker.point).withIconImage(bitmapFromDrawableRes(this@MainActivity, R.drawable.green_marker)!!)
+                        pointAnnotationManager?.create(options)
+                    }
+                }
+                ctmEnabled = !ctmEnabled
+            }
+            MarkerTypes.CURIOSITY-> {
+                if (curiositaEnabled) {
+                    for (marker in ListaCuriosita) {
+                        pointAnnotationManager?.delete(marker)
+                    }
+                } else {
+                    for (marker in ListaCuriosita) {
+                        val options = PointAnnotationOptions().withPoint(marker.point).withIconImage(bitmapFromDrawableRes(this@MainActivity, R.drawable.green_marker)!!)
+                        pointAnnotationManager?.create(options)
+                    }
+                }
+                curiositaEnabled = !curiositaEnabled
+            }
+            MarkerTypes.PARKS-> {
+                if (parchiEnabled) {
+                    for (marker in ListaParchi) {
+                        pointAnnotationManager?.delete(marker)
+                    }
+                } else {
+                    for (marker in ListaParchi) {
+                        val options = PointAnnotationOptions().withPoint(marker.point).withIconImage(bitmapFromDrawableRes(this@MainActivity, R.drawable.green_marker)!!)
+                        pointAnnotationManager?.create(options)
+                    }
+                }
+                parchiEnabled = !parchiEnabled
+            }
+            MarkerTypes.AGES-> {
+                if (epocheEnabled) {
+                    for (marker in ListaEpoche) {
+                        pointAnnotationManager?.delete(marker)
+                    }
+                } else {
+                    for (marker in ListaEpoche) {
+                        val options = PointAnnotationOptions().withPoint(marker.point).withIconImage(bitmapFromDrawableRes(this@MainActivity, R.drawable.green_marker)!!)
+                        pointAnnotationManager?.create(options)
+                    }
+                }
+                epocheEnabled = !epocheEnabled
+            }
+            MarkerTypes.NOTYPE -> {
+                // TODO: Manage Notype case
+            }
+        }
     }
 
-/*    override fun onCreate(savedInstanceState: Bundle?) {
 
-        ColorTagMap["Monumenti"] = ::onMonumentiClick
-        ColorTagMap["CTM"] = ::onCTMClick
-        ColorTagMap["Curiosita"] = ::onCuriositaClick
-        ColorTagMap["Parchi"] = ::onParchiClick
-        ColorTagMap["Epoche"] = ::onEpocheClick
+    /*    override fun onCreate(savedInstanceState: Bundle?) {
 
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+            ColorTagMap["Monumenti"] = ::onMonumentiClick
+            ColorTagMap["CTM"] = ::onCTMClick
+            ColorTagMap["Curiosita"] = ::onCuriositaClick
+            ColorTagMap["Parchi"] = ::onParchiClick
+            ColorTagMap["Epoche"] = ::onEpocheClick
 
-        CurrentText = findViewById(R.id.NameText)
-        CurrentButton = findViewById(R.id.buttonOther)
+            super.onCreate(savedInstanceState)
+            setContentView(R.layout.activity_main)
 
-        val displayMetrics = DisplayMetrics()
-        val windowManager = this.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        display= windowManager.defaultDisplay
+            CurrentText = findViewById(R.id.NameText)
+            CurrentButton = findViewById(R.id.buttonOther)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            display.getRealMetrics(displayMetrics)
-        } else {
-            @Suppress("DEPRECATION")
-            display.getMetrics(displayMetrics)
-        }
+            val displayMetrics = DisplayMetrics()
+            val windowManager = this.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+            display= windowManager.defaultDisplay
 
-        jsonString = loadJSONResource(this.applicationContext, R.raw.markers).toString()
-
-        compactLayout = findViewById(R.id.compactLayout)
-        coordinatorLayout = findViewById(R.id.coordinatorLayout)
-        detailLayout = findViewById(R.id.relativeLayout)
-        includeLayout = detailLayout.findViewById(R.id.compactLayout)
-        layoutCategories = findViewById(R.id.layoutCategories)
-        imageContainer = findViewById(R.id.imageContainer)
-        imageLayout = findViewById(R.id.imageLayout)
-
-        detailLayout.layoutParams.height = displayMetrics.heightPixels - 100
-
-        coordinatorLayout.visibility = View.GONE
-        detailLayout.visibility = View.GONE
-
-        btnMonumenti = findViewById(R.id.btnMonumenti)
-        btnCTM = findViewById(R.id.btnCTM)
-        btnCuriosita = findViewById(R.id.btnCuriosita)
-        btnEpoche = findViewById(R.id.btnEpoche)
-        btnParchi = findViewById(R.id.btnParchi)
-
-        mapView = findViewById(R.id.mapView)
-        mapView?.getMapboxMap()?.loadStyleUri("mapbox://styles/ssulf/clhgo1b4901d001qy8wqrgo52")
-        pointAnnotationManager = mapView?.annotations?.createPointAnnotationManager()
-
-        mapView?.scalebar?.enabled = false
-        mapView?.attribution?.enabled = false
-        mapView?.logo?.enabled = false
-        mapView?.compass?.enabled = false
-
-        locationRequest = LocationRequest.create().apply {
-            interval = LOCATION_UPDATE_INTERVAL
-            fastestInterval = LOCATION_UPDATE_FASTEST_INTERVAL
-            priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-        }
-
-        locationCallback = object : LocationCallback() {
-            override fun onLocationResult(locationResult: LocationResult) {
-                locationResult.lastLocation?.let { handleLocationResult(it) }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                display.getRealMetrics(displayMetrics)
+            } else {
+                @Suppress("DEPRECATION")
+                display.getMetrics(displayMetrics)
             }
-        }
 
+            jsonString = loadJSONResource(this.applicationContext, R.raw.markers).toString()
 
-        imageLayout.setOnClickListener {
-            if(imageLayout.visibility == View.VISIBLE){
-                imageLayout.visibility = View.GONE
+            compactLayout = findViewById(R.id.compactLayout)
+            coordinatorLayout = findViewById(R.id.coordinatorLayout)
+            detailLayout = findViewById(R.id.relativeLayout)
+            includeLayout = detailLayout.findViewById(R.id.compactLayout)
+            layoutCategories = findViewById(R.id.layoutCategories)
+            imageContainer = findViewById(R.id.imageContainer)
+            imageLayout = findViewById(R.id.imageLayout)
+
+            detailLayout.layoutParams.height = displayMetrics.heightPixels - 100
+
+            coordinatorLayout.visibility = View.GONE
+            detailLayout.visibility = View.GONE
+
+            btnMonumenti = findViewById(R.id.btnMonumenti)
+            btnCTM = findViewById(R.id.btnCTM)
+            btnCuriosita = findViewById(R.id.btnCuriosita)
+            btnEpoche = findViewById(R.id.btnEpoche)
+            btnParchi = findViewById(R.id.btnParchi)
+
+            mapView = findViewById(R.id.mapView)
+            mapView?.getMapboxMap()?.loadStyleUri("mapbox://styles/ssulf/clhgo1b4901d001qy8wqrgo52")
+            pointAnnotationManager = mapView?.annotations?.createPointAnnotationManager()
+
+            mapView?.scalebar?.enabled = false
+            mapView?.attribution?.enabled = false
+            mapView?.logo?.enabled = false
+            mapView?.compass?.enabled = false
+
+            locationRequest = LocationRequest.create().apply {
+                interval = LOCATION_UPDATE_INTERVAL
+                fastestInterval = LOCATION_UPDATE_FASTEST_INTERVAL
+                priority = LocationRequest.PRIORITY_HIGH_ACCURACY
             }
-        }
 
-        coordinatorLayout.setOnTouchListener(object : View.OnTouchListener {
-            private val MIN_SWIPE_DISTANCE = 100
-            private val MAX_SWIPE_DURATION = 300
+            locationCallback = object : LocationCallback() {
+                override fun onLocationResult(locationResult: LocationResult) {
+                    locationResult.lastLocation?.let { handleLocationResult(it) }
+                }
+            }
 
-            private var startY: Float = 0f
-            private var startTime: Long = 0
 
-            override fun onTouch(v: View, event: MotionEvent): Boolean {
-                when (event.action) {
-                    MotionEvent.ACTION_DOWN -> {
-                        startY = event.y
-                        startTime = System.currentTimeMillis()
-                        return true
-                    }
-                    MotionEvent.ACTION_UP -> {
-                        val endY = event.y
-                        val endTime = System.currentTimeMillis()
+            imageLayout.setOnClickListener {
+                if(imageLayout.visibility == View.VISIBLE){
+                    imageLayout.visibility = View.GONE
+                }
+            }
 
-                        val distance = endY - startY
-                        val duration = endTime - startTime
+            coordinatorLayout.setOnTouchListener(object : View.OnTouchListener {
+                private val MIN_SWIPE_DISTANCE = 100
+                private val MAX_SWIPE_DURATION = 300
 
-                        if (distance < -MIN_SWIPE_DISTANCE && duration < MAX_SWIPE_DURATION) {
-                            Toast.makeText(this@MainActivity, "Showing detail", Toast.LENGTH_SHORT).show()
-                            detailLayout.visibility = View.VISIBLE
-                            coordinatorLayout.visibility = View.GONE
+                private var startY: Float = 0f
+                private var startTime: Long = 0
+
+                override fun onTouch(v: View, event: MotionEvent): Boolean {
+                    when (event.action) {
+                        MotionEvent.ACTION_DOWN -> {
+                            startY = event.y
+                            startTime = System.currentTimeMillis()
+                            return true
                         }
+                        MotionEvent.ACTION_UP -> {
+                            val endY = event.y
+                            val endTime = System.currentTimeMillis()
 
-                        return true
-                    }
-                }
-                return false
-            }
-        })
+                            val distance = endY - startY
+                            val duration = endTime - startTime
 
+                            if (distance < -MIN_SWIPE_DISTANCE && duration < MAX_SWIPE_DURATION) {
+                                Toast.makeText(this@MainActivity, "Showing detail", Toast.LENGTH_SHORT).show()
+                                detailLayout.visibility = View.VISIBLE
+                                coordinatorLayout.visibility = View.GONE
+                            }
 
-        detailLayout.setOnTouchListener(object : View.OnTouchListener {
-            private val MIN_SWIPE_DISTANCE = 100
-            private val MAX_SWIPE_DURATION = 3000
-
-            private var startY: Float = 0f
-            private var startTime: Long = 0
-
-            override fun onTouch(v: View, event: MotionEvent): Boolean {
-                when (event.action) {
-                    MotionEvent.ACTION_UP -> {
-                        startY = event.y
-                        startTime = System.currentTimeMillis()
-                        return true
-                    }
-                    MotionEvent.ACTION_DOWN -> {
-                        val endY = event.y
-                        val endTime = System.currentTimeMillis()
-
-                        val distance = endY - startY
-                        val duration = endTime - startTime
-
-                        if (distance < -MIN_SWIPE_DISTANCE && duration < MAX_SWIPE_DURATION) {
-                            // Swipe up gesture detected
-                            Toast.makeText(this@MainActivity, "Showing compat", Toast.LENGTH_SHORT).show()
-                            detailLayout.visibility = View.GONE
-                            coordinatorLayout.visibility = View.VISIBLE
+                            return true
                         }
-
-                        return true
                     }
+                    return false
                 }
-                return false
-            }
-        })
+            })
 
-        val btnCenterMap: ImageButton = findViewById(R.id.btnCenterMap)
-        btnCenterMap.setOnClickListener {
-            centerMapOnUserPosition()
-        }
 
-        searchBarEditText = findViewById(R.id.searchBarEditText)
+            detailLayout.setOnTouchListener(object : View.OnTouchListener {
+                private val MIN_SWIPE_DISTANCE = 100
+                private val MAX_SWIPE_DURATION = 3000
 
-        searchBarEditText.doOnTextChanged{text, start, before, count ->
+                private var startY: Float = 0f
+                private var startTime: Long = 0
 
-            if(text.isNullOrEmpty()){
-                for (marker in AllMarkers){
-                    if(!(SearchResult.contains(marker))){
-                        reenableMarker(marker)
+                override fun onTouch(v: View, event: MotionEvent): Boolean {
+                    when (event.action) {
+                        MotionEvent.ACTION_UP -> {
+                            startY = event.y
+                            startTime = System.currentTimeMillis()
+                            return true
+                        }
+                        MotionEvent.ACTION_DOWN -> {
+                            val endY = event.y
+                            val endTime = System.currentTimeMillis()
+
+                            val distance = endY - startY
+                            val duration = endTime - startTime
+
+                            if (distance < -MIN_SWIPE_DISTANCE && duration < MAX_SWIPE_DURATION) {
+                                // Swipe up gesture detected
+                                Toast.makeText(this@MainActivity, "Showing compat", Toast.LENGTH_SHORT).show()
+                                detailLayout.visibility = View.GONE
+                                coordinatorLayout.visibility = View.VISIBLE
+                            }
+
+                            return true
+                        }
                     }
+                    return false
                 }
+            })
 
-                SearchResult.clear()
+            val btnCenterMap: ImageButton = findViewById(R.id.btnCenterMap)
+            btnCenterMap.setOnClickListener {
+                centerMapOnUserPosition()
             }
-        }
 
-        mapView?.setOnTouchListener{ _, _ ->
-            if(coordinatorLayout.visibility == View.VISIBLE){
-                coordinatorLayout.visibility = View.GONE
-            }
-            if(detailLayout.visibility == View.VISIBLE){
-                detailLayout.visibility = View.GONE
-            }
-            false
-        }
+            searchBarEditText = findViewById(R.id.searchBarEditText)
 
-    }*/
+            searchBarEditText.doOnTextChanged{text, start, before, count ->
+
+                if(text.isNullOrEmpty()){
+                    for (marker in AllMarkers){
+                        if(!(SearchResult.contains(marker))){
+                            reenableMarker(marker)
+                        }
+                    }
+
+                    SearchResult.clear()
+                }
+            }
+
+            mapView?.setOnTouchListener{ _, _ ->
+                if(coordinatorLayout.visibility == View.VISIBLE){
+                    coordinatorLayout.visibility = View.GONE
+                }
+                if(detailLayout.visibility == View.VISIBLE){
+                    detailLayout.visibility = View.GONE
+                }
+                false
+            }
+
+        }*/
 
     private fun search(){
             val searchText = searchBarEditText.text.toString()
@@ -446,84 +535,11 @@ class MainActivity : AppCompatActivity() {
         SearchResultCameraPosition()
     }
 
-    private fun disableMonumenti() {
-        if (monumentiEnabled) {
-            for (marker in ListaMonumenti) {
-                pointAnnotationManager?.delete(marker)
-            }
-        } else {
-            for (marker in ListaMonumenti) {
-                val options = PointAnnotationOptions().withPoint(marker.point).withIconImage(bitmapFromDrawableRes(this@MainActivity, R.drawable.green_marker)!!)
-                pointAnnotationManager?.create(options)
-            }
-        }
-        monumentiEnabled = !monumentiEnabled
-    }
-
-
     private fun reenableMarker(marker: PointAnnotation){
         val options = PointAnnotationOptions().withPoint(marker.point).withIconImage(bitmapFromDrawableRes(this@MainActivity, R.drawable.green_marker)!!)
         pointAnnotationManager?.create(options)
     }
-    private fun disableCTM() {
-        if (ctmEnabled) {
-            for (marker in ListaCTM) {
-                pointAnnotationManager?.delete(marker)
-            }
-        } else {
-            for (marker in ListaCTM) {
-                val options = PointAnnotationOptions().withPoint(marker.point).withIconImage(bitmapFromDrawableRes(this@MainActivity, R.drawable.green_marker)!!)
-                pointAnnotationManager?.create(options)
-            }
-        }
-        ctmEnabled = !ctmEnabled
-    }
 
-    private fun disableCuriosita() {
-        if (curiositaEnabled) {
-            for (marker in ListaCuriosita) {
-                pointAnnotationManager?.delete(marker)
-            }
-        } else {
-            for (marker in ListaCuriosita) {
-                val options = PointAnnotationOptions().withPoint(marker.point).withIconImage(bitmapFromDrawableRes(this@MainActivity, R.drawable.green_marker)!!)
-                pointAnnotationManager?.create(options)
-            }
-        }
-        curiositaEnabled = !curiositaEnabled
-    }
-
-    private fun disableParchi() {
-        if (parchiEnabled) {
-            for (marker in ListaParchi) {
-                pointAnnotationManager?.delete(marker)
-            }
-        } else {
-            for (marker in ListaParchi) {
-                val options = PointAnnotationOptions().withPoint(marker.point).withIconImage(bitmapFromDrawableRes(this@MainActivity, R.drawable.green_marker)!!)
-                pointAnnotationManager?.create(options)
-            }
-        }
-        parchiEnabled = !parchiEnabled
-    }
-
-    private fun disableEpoche() {
-        if (epocheEnabled) {
-            for (marker in ListaEpoche) {
-                pointAnnotationManager?.delete(marker)
-            }
-        } else {
-            for (marker in ListaEpoche) {
-                val options = PointAnnotationOptions().withPoint(marker.point).withIconImage(bitmapFromDrawableRes(this@MainActivity, R.drawable.green_marker)!!)
-                pointAnnotationManager?.create(options)
-            }
-        }
-        epocheEnabled = !epocheEnabled
-    }
-
-    private fun disableCategory(type: MarkerTypes){
-        //TODO Logics Category
-    }
 
     private fun centerMapOnUserPosition() {
         mapView?.getMapboxMap()?.setCamera(
@@ -532,34 +548,6 @@ class MainActivity : AppCompatActivity() {
                 .zoom(13.0)
                 .build()
         )
-    }
-
-    private fun loadJSONResource(context: Context, resourceId: Int): String? {
-        return try {
-            val inputStream = context.resources.openRawResource(resourceId)
-            val jsonString = inputStream.bufferedReader().use { it.readText() }
-            jsonString
-        } catch (e: IOException) {
-            e.printStackTrace()
-            null
-        }
-    }
-
-    override fun onStart() {
-        super.onStart()
-        if (!hasLocationPermission()) {
-            requestLocationPermission()
-        } else if (!isLocationServiceEnabled()) {
-            showLocationServiceDisabledDialog()
-        } else {
-            startLocationUpdates()
-        }
-    }
-
-
-    override fun onStop() {
-        super.onStop()
-        stopLocationUpdates()
     }
 
     private fun hasLocationPermission(): Boolean {
@@ -708,7 +696,7 @@ class MainActivity : AppCompatActivity() {
 
         return null
     }
-
+/*
     private fun addMarkerToMap(marker: Marker) {
         pointAnnotationManager?.addClickListener(OnPointAnnotationClickListener {
             annotation:PointAnnotation ->
@@ -742,7 +730,7 @@ class MainActivity : AppCompatActivity() {
 
 
     }
-
+*/
     private fun createMarkerData(marker: Marker): JsonObject {
         val jsonData = JsonObject()
         jsonData.addProperty("description", marker.description)
@@ -897,50 +885,53 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    private fun onMonumentiClick(marker: PointAnnotation) {
-        if (coordinatorLayout.visibility != View.VISIBLE) {
-            coordinatorLayout.visibility = View.VISIBLE
+    private fun onMarkerClick(marker: PointAnnotation, type: MarkerTypes){ // TODO: Refactor onMarkerClick Logic
+        when(type) {
+            MarkerTypes.MONUMENTS -> {
+                if (coordinatorLayout.visibility != View.VISIBLE) {
+                    coordinatorLayout.visibility = View.VISIBLE
+                }
+
+                val markerData = marker.getData()
+
+                updateDetailViews(markerData, Color.parseColor("#0000FF"))
+            }
+            MarkerTypes.CTM-> {
+                if (coordinatorLayout.visibility != View.VISIBLE) {
+                    coordinatorLayout.visibility = View.VISIBLE
+                }
+
+                val markerData = marker.getData()
+                updateDetailViews(markerData,Color.parseColor("#FF0000"))
+            }
+            MarkerTypes.CURIOSITY-> {
+                if (coordinatorLayout.visibility != View.VISIBLE) {
+                    coordinatorLayout.visibility = View.VISIBLE
+                }
+
+                val markerData = marker.getData()
+                updateDetailViews(markerData, Color.parseColor("#FFFF00"))
+            }
+            MarkerTypes.PARKS-> {
+                if (coordinatorLayout.visibility != View.VISIBLE) {
+                    coordinatorLayout.visibility = View.VISIBLE
+                }
+
+                val markerData = marker.getData()
+                updateDetailViews(markerData, Color.parseColor("#00FF00"))
+            }
+            MarkerTypes.AGES-> {
+                if (coordinatorLayout.visibility != View.VISIBLE) {
+                    coordinatorLayout.visibility = View.VISIBLE
+                }
+
+                val markerData = marker.getData()
+                updateDetailViews(markerData, Color.parseColor("#FF00FF"))
+            }
+            MarkerTypes.NOTYPE -> {
+                // TODO: Manage Notype case
+            }
         }
-
-        val markerData = marker.getData()
-
-        updateDetailViews(markerData, Color.parseColor("#0000FF"))
-    }
-
-    private fun onCTMClick(marker: PointAnnotation) {
-        if (coordinatorLayout.visibility != View.VISIBLE) {
-            coordinatorLayout.visibility = View.VISIBLE
-        }
-
-        val markerData = marker.getData()
-        updateDetailViews(markerData,Color.parseColor("#FF0000"))
-    }
-
-    private fun onCuriositaClick(marker: PointAnnotation) {
-        if (coordinatorLayout.visibility != View.VISIBLE) {
-            coordinatorLayout.visibility = View.VISIBLE
-        }
-
-        val markerData = marker.getData()
-        updateDetailViews(markerData, Color.parseColor("#FFFF00"))
-    }
-
-    private fun onParchiClick(marker: PointAnnotation) {
-        if (coordinatorLayout.visibility != View.VISIBLE) {
-            coordinatorLayout.visibility = View.VISIBLE
-        }
-
-        val markerData = marker.getData()
-        updateDetailViews(markerData, Color.parseColor("#00FF00"))
-    }
-
-    private fun onEpocheClick(marker: PointAnnotation) {
-        if (coordinatorLayout.visibility != View.VISIBLE) {
-            coordinatorLayout.visibility = View.VISIBLE
-        }
-
-        val markerData = marker.getData()
-        updateDetailViews(markerData, Color.parseColor("#FF00FF"))
     }
 
     private fun onMiscClick(marker: PointAnnotation) {

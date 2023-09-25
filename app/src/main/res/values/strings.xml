@@ -5,7 +5,7 @@
     //ButtonsLabel
     <string name="monuments_label">Monumenti</string>
     <string name="ctm_label">CTM</string>
-    <string name="curiosity_label">Curisosità</string>
+    <string name="curiosity_label">Curiosità</string>
     <string name="parks_label">Parchi</string>
     <string name="ages_label">Epoche</string>
 </resources>
