@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name" translatable="false">PlanetHistory</string>
+    <string name="mapbox_access_token" translatable="false">pk.eyJ1Ijoic3N1bGYiLCJhIjoiY2xnNnl3cjFyMGVuZzNncXltN3ZxNTRqNSJ9.idce9FdcCjLtScbta8I24w</string>
+
+    //ButtonsLabel
+    <string name="monuments_label">Monumenti</string>
+    <string name="ctm_label">CTM</string>
+    <string name="curiosity_label">Curisosità</string>
+    <string name="parks_label">Parchi</string>
+    <string name="ages_label">Epoche</string>
+</resources>

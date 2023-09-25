@@ -1,0 +1,172 @@
+[
+    {
+        "description": "L\u2019istituto tecnico industriale G.Armellini, fondato nel 1961 dal Dott. Ing. Giacinto della Cananea e inaugurato ufficialmente il 31 maggio 1962 \u00e8 stato dedicato a Giuseppe Armellini (astronomo, vissuto a Roma e morto nel 1958).",
+        "tags": [
+            "Scuola", 
+            "1900"
+        ], 
+        "main_tag": "Monumenti",
+        "marker_name": "ITIS Giuseppe Armellini", 
+        "lat": 41.85604586759884, 
+        "lng": 12.47636809454142, 
+        "id": "itis_ga",
+        "images": [
+            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRq_BcVXt4Xn3n9I5G9HdjJhAHWNZopXsf46QfxzBuotKXYNhfhuJqJyFAmaffsq9_6LjY&usqp=CAU",
+            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRavjxkZwPn6HtOIyT84Om4Iq77oW4kSOE_g3zuebgr5PKhtL995kfsnYxOjrISkx98Hes&usqp=CAU",
+            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQNmu9d3PH4dl-5I-yG8p-0YokA8EHMIQ_bcAeJhMYzstMSx2mOX3i_ngUk2SqgjjwKB5U&usqp=CAU"
+        ]
+    }, 
+    {
+        "description": "Il Colosseo, originariamente conosciuto come Anfiteatro Flavio (in latino: Amphitheatrum Flavium) o semplicemente Amphitheatrum (in italiano: Anfiteatro), situato nel centro della citt\u00e0 di Roma, \u00e8 il pi\u00f9 grande anfiteatro romano del mondo (in grado di contenere un numero di spettatori stimato tra 50 000 e 87 000).", 
+        "tags": [
+            "Cultura", 
+            "Archeleogia"
+        ], 
+        "main_tag": "Monumenti",
+        "marker_name": "Colosseo", 
+        "lat": 41.890282779659174, 
+        "lng": 12.49220564539936, 
+        "id": "cls",
+        "images": [
+            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRq_BcVXt4Xn3n9I5G9HdjJhAHWNZopXsf46QfxzBuotKXYNhfhuJqJyFAmaffsq9_6LjY&usqp=CAU",
+            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRavjxkZwPn6HtOIyT84Om4Iq77oW4kSOE_g3zuebgr5PKhtL995kfsnYxOjrISkx98Hes&usqp=CAU",
+            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQNmu9d3PH4dl-5I-yG8p-0YokA8EHMIQ_bcAeJhMYzstMSx2mOX3i_ngUk2SqgjjwKB5U&usqp=CAU"
+        ]
+    }, 
+    {
+        "description": "Basilica San Paolo \u00e8 una fermata della linea B della metropolitana di Roma e della ferrovia Roma-Lido, una delle tre che le due strade ferrate hanno in comune. \u00c8 sopraelevata e si trova nel quartiere Ostiense sopra l'incrocio tra viale Giustiniano Imperatore e via Gaspare Gozzi.", 
+        "tags": [
+            "Architettura", 
+            "1900"
+        ], 
+        "main_tag": "Monumenti",
+        "marker_name": "Stazione Basilica di San Paolo", 
+        "lat": 41.85569515317489, 
+        "lng": 12.478152490003996, 
+        "id": "sbsp",
+        "images": [
+            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRq_BcVXt4Xn3n9I5G9HdjJhAHWNZopXsf46QfxzBuotKXYNhfhuJqJyFAmaffsq9_6LjY&usqp=CAU",
+            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRavjxkZwPn6HtOIyT84Om4Iq77oW4kSOE_g3zuebgr5PKhtL995kfsnYxOjrISkx98Hes&usqp=CAU",
+            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQNmu9d3PH4dl-5I-yG8p-0YokA8EHMIQ_bcAeJhMYzstMSx2mOX3i_ngUk2SqgjjwKB5U&usqp=CAU"
+        ]
+    }, 
+    {
+        "description": "La basilica papale di San Paolo fuori le mura \u00e8 una delle quattro basiliche papali di Roma, la pi\u00f9 grande dopo quella di San Pietro in Vaticano.La basilica papale di San Paolo fuori le mura \u00e8 una delle quattro basiliche papali di Roma, la pi\u00f9 grande dopo quella di San Pietro in Vaticano.", 
+        "tags": [
+            "Architettura", 
+            "Religione"
+        ], 
+        "main_tag": "Monumenti",
+        "marker_name": "Basilica di San Paolo", 
+        "lat": 41.8587998836576, 
+        "lng": 12.476719342921665, 
+        "id": "bsp",
+        "images": [
+            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRq_BcVXt4Xn3n9I5G9HdjJhAHWNZopXsf46QfxzBuotKXYNhfhuJqJyFAmaffsq9_6LjY&usqp=CAU",
+            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRavjxkZwPn6HtOIyT84Om4Iq77oW4kSOE_g3zuebgr5PKhtL995kfsnYxOjrISkx98Hes&usqp=CAU",
+            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQNmu9d3PH4dl-5I-yG8p-0YokA8EHMIQ_bcAeJhMYzstMSx2mOX3i_ngUk2SqgjjwKB5U&usqp=CAU"
+        ]
+    }, 
+    {
+        "description": "0", 
+        "tags": [
+            "0", 
+            " 0"
+        ], 
+        "main_tag": "Monumenti",
+        "marker_name": "Test0", 
+        "lat": 0.0, 
+        "lng": 0.0, 
+        "id": "test0",
+        "images": []
+    }, 
+    {
+        "description": "10", 
+        "tags": [
+            "1"
+        ], 
+        "main_tag": "CTM",
+        "marker_name": "test1", 
+        "lat": 10.0, 
+        "lng": 10.0, 
+        "id": "test1",
+        "images": []
+    }, 
+    {
+        "description": "20", 
+        "tags": [
+            "2", 
+            " 2"
+        ], 
+        "main_tag": "Curiosita",
+        "marker_name": "Test2", 
+        "lat": 20.0, 
+        "lng": 20.0, 
+        "id": "test2",
+        "images": []
+    }, 
+    {
+        "description": "30", 
+        "tags": [
+            "3", 
+            " 3"
+        ], 
+        "main_tag": "Parchi",
+        "marker_name": "Test3", 
+        "lat": 30.0, 
+        "lng": 30.0, 
+        "id": "test3",
+        "images": []
+    }, 
+    {
+        "description": "Epoche",
+        "tags": [
+            "4", 
+            " 4"
+        ], 
+        "main_tag": "Shopping", 
+        "marker_name": "Test4", 
+        "lat": 40.0, 
+        "lng": 40.0,
+        "id": "test4",
+        "images": []
+    }, 
+    {
+        "description": "50", 
+        "tags": [
+            "5", 
+            " 5"
+        ], 
+        "main_tag": "Epoche",
+        "marker_name": "Test5", 
+        "lat": 50.0, 
+        "lng": 50.0, 
+        "id": "test5",
+        "images": []
+    }, 
+    {
+        "description": "60", 
+        "tags": [
+            "6", 
+            " 6"
+        ], 
+        "main_tag": "Epoche",
+        "marker_name": "Test6", 
+        "lat": 60.0, 
+        "lng": 60.0, 
+        "id": "test6",
+        "images": []
+    }, 
+    {
+        "description": "70", 
+        "tags": [
+            "7"
+        ], 
+        "main_tag": "Epoche",
+        "marker_name": "Test7", 
+        "lat": 70.0, 
+        "lng": 70.0, 
+        "id": "test7",
+        "images": []
+    }
+]

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/frameLayout"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:mapbox="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.mapbox.maps.MapView
+        android:id="@+id/mapView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        mapbox:mapbox_cameraTargetLat="40.7128"
+        mapbox:mapbox_cameraTargetLng="-74.0060"
+        mapbox:mapbox_cameraZoom="9.0" />
+
+    <LinearLayout
+        android:id="@+id/searchPanel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="16dp"
+        android:background="@drawable/search_bar"
+        android:orientation="horizontal">
+
+        <ImageButton
+            android:id="@+id/searchButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:contentDescription="Search"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_search" />
+
+        <EditText
+            android:id="@+id/searchBarEditText"
+            android:layout_width="0dp"
+            android:layout_weight="5"
+            android:layout_height="48dp"
+            android:background="@android:color/transparent"
+            android:hint="Enter your search query" />
+
+        <ImageButton
+            android:id="@+id/btnCategorySelect"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_gravity="center_vertical"
+            android:background="@drawable/ic_marker_select"
+            android:contentDescription="Center Map on Position"
+            android:src="@drawable/ic_setting" />
+
+    </LinearLayout>
+
+
+   <!-- TODO RecyclerView Menu -->
+    <include
+        android:id="@+id/category_layout"
+        layout="@layout/category_select"
+        android:layout_gravity="right"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="60dp"
+        android:layout_marginEnd="20dp"
+        android:visibility="gone"/>
+
+    <ImageButton
+        android:id="@+id/btnCenterMap"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginBottom="16dp"
+        android:layout_marginEnd="8dp"
+        android:layout_gravity="bottom|end"
+        android:background="@drawable/center_map_button"
+        android:contentDescription="Center Map on Position"
+        android:src="@drawable/ic_location" />
+
+    <include layout="@layout/compat_layout"/>
+
+    <include layout="@layout/detail_layout"/>
+
+    <include layout="@layout/image_fullscreen"
+        android:visibility="gone"/>
+
+</FrameLayout>

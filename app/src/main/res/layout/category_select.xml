@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/layoutCategories"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnMonumenti"
+        android:layout_width="128dp"
+        android:layout_height="40dp"
+        android:text="@string/monuments_label"
+        android:textColor="@color/black"
+        android:background="@drawable/rounded_square"
+        android:backgroundTint="#810000FF"
+        tools:ignore="SpeakableTextPresentCheck"/>
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnCTM"
+        android:layout_width="128dp"
+        android:layout_height="40dp"
+        android:text="@string/ctm_label"
+        android:textColor="@color/black"
+        android:background="#81FF0000"
+        tools:ignore="SpeakableTextPresentCheck"/>
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnCuriosita"
+        android:layout_width="128dp"
+        android:layout_height="40dp"
+        android:text="@string/curiosity_label"
+        android:textColor="@color/black"
+        android:background="#81FFFF00"
+        tools:ignore="SpeakableTextPresentCheck"/>
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnParchi"
+        android:layout_width="128dp"
+        android:layout_height="40dp"
+        android:text="@string/parks_label"
+        android:textColor="@color/black"
+        android:background="#8100FF00"
+        tools:ignore="SpeakableTextPresentCheck" />
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnEpoche"
+        android:layout_width="128dp"
+        android:layout_height="40dp"
+        android:text="@string/ages_label"
+        android:textColor="@color/black"
+        android:background="@drawable/rounded_square_upside"
+        android:backgroundTint="#81FF00FF"
+        tools:ignore="SpeakableTextPresentCheck" />
+
+</LinearLayout>
