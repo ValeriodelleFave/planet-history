@@ -13,8 +13,10 @@ import android.graphics.drawable.GradientDrawable
 import android.location.Location
 import android.location.LocationManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.util.DisplayMetrics
 import android.util.Log
 import android.view.*
 import android.view.inputmethod.InputMethodManager
@@ -27,8 +29,10 @@ import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
+import androidx.core.widget.doOnTextChanged
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.gson.JsonElement
@@ -83,9 +87,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var searchBarEditText: EditText
     private val LOCATION_PERMISSION_REQUEST_CODE = 177013
 
-
-    private val ColorTagMap = mutableMapOf<String, (PointAnnotation) -> Unit>()
-
     private lateinit var CurrentText: TextView
     private lateinit var CurrentButton: Button
 
@@ -131,6 +132,129 @@ class MainActivity : AppCompatActivity() {
         stopLocationUpdates()
     }
 
+    private fun getDisplayMetrics(): DisplayMetrics {
+        val displayMetrics = DisplayMetrics()
+        val windowManager = this.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        display = windowManager.defaultDisplay
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            display.getRealMetrics(displayMetrics)
+        } else {
+            @Suppress("DEPRECATION")
+            display.getMetrics(displayMetrics)
+        }
+        return displayMetrics
+    }
+
+    private fun setCoordinatorLayout() {
+        coordinatorLayout = findViewById(R.id.coordinatorLayout)
+        coordinatorLayout.visibility = View.GONE
+        coordinatorLayout.setOnTouchListener(object : View.OnTouchListener {
+            private val MIN_SWIPE_DISTANCE = 100
+            private val MAX_SWIPE_DURATION = 300
+
+            private var startY: Float = 0f
+            private var startTime: Long = 0
+
+            override fun onTouch(v: View, event: MotionEvent): Boolean {
+                when (event.action) {
+                    MotionEvent.ACTION_DOWN -> {
+                        startY = event.y
+                        startTime = System.currentTimeMillis()
+                        return true
+                    }
+                    MotionEvent.ACTION_UP -> {
+                        val endY = event.y
+                        val endTime = System.currentTimeMillis()
+
+                        val distance = endY - startY
+                        val duration = endTime - startTime
+
+                        if (distance < -MIN_SWIPE_DISTANCE && duration < MAX_SWIPE_DURATION) {
+                            Toast.makeText(this@MainActivity, "Showing detail", Toast.LENGTH_SHORT).show()
+                            detailLayout.visibility = View.VISIBLE
+                            coordinatorLayout.visibility = View.GONE
+                        }
+
+                        return true
+                    }
+                }
+                return false
+            }
+        })
+    }
+
+    private fun setDetailLayout(displayMetrics: DisplayMetrics) {
+        detailLayout = findViewById(R.id.relativeLayout)
+        detailLayout.layoutParams.height = displayMetrics.heightPixels - 100
+        detailLayout.visibility = View.GONE
+        detailLayout.setOnTouchListener(object : View.OnTouchListener {
+            private val MIN_SWIPE_DISTANCE = 100
+            private val MAX_SWIPE_DURATION = 3000
+
+            private var startY: Float = 0f
+            private var startTime: Long = 0
+
+            override fun onTouch(v: View, event: MotionEvent): Boolean {
+                when (event.action) {
+                    MotionEvent.ACTION_UP -> {
+                        startY = event.y
+                        startTime = System.currentTimeMillis()
+                        return true
+                    }
+                    MotionEvent.ACTION_DOWN -> {
+                        val endY = event.y
+                        val endTime = System.currentTimeMillis()
+
+                        val distance = endY - startY
+                        val duration = endTime - startTime
+
+                        if (distance < -MIN_SWIPE_DISTANCE && duration < MAX_SWIPE_DURATION) {
+                            // Swipe up gesture detected
+                            Toast.makeText(this@MainActivity, "Showing compat", Toast.LENGTH_SHORT).show()
+                            detailLayout.visibility = View.GONE
+                            coordinatorLayout.visibility = View.VISIBLE
+                        }
+
+                        return true
+                    }
+                }
+                return false
+            }
+        })
+    }
+
+    private fun setImageLayout() {
+        imageLayout = findViewById(R.id.imageLayout)
+        imageLayout.setOnClickListener {
+            if(imageLayout.visibility == View.VISIBLE){
+                imageLayout.visibility = View.GONE
+            }
+        }
+    }
+
+    private fun setBtnCenterMap() {
+        binding.btnCenterMap.run {
+            setOnClickListener {
+                centerMapOnUserPosition()
+            }
+        }
+    }
+
+    private fun setSearchBarEditText() {
+        binding.searchBarEditText.run {
+            doOnTextChanged{text, start, before, count ->
+                if(text.isNullOrEmpty()){
+                    for (marker in AllMarkers){
+                        if(!(SearchResult.contains(marker))){
+                            reenableMarker(marker)
+                        }
+                    }
+                    SearchResult.clear()
+                }
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -141,7 +265,24 @@ class MainActivity : AppCompatActivity() {
 
         setupOnClickListener()
         setupMap()
-   
+
+        val displayMetrics = getDisplayMetrics()
+        setCoordinatorLayout()
+        setDetailLayout(displayMetrics)
+        setImageLayout()
+        setBtnCenterMap()
+        setSearchBarEditText()
+
+        locationRequest = LocationRequest.create().apply {
+            interval = LOCATION_UPDATE_INTERVAL
+            fastestInterval = LOCATION_UPDATE_FASTEST_INTERVAL
+            priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+        }
+        locationCallback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult) {
+                locationResult.lastLocation?.let { handleLocationResult(it) }
+            }
+        }
     }
 
     override fun onRequestPermissionsResult(
@@ -191,6 +332,17 @@ class MainActivity : AppCompatActivity() {
                 true
             })
             addMarkerToMap()
+
+            // TODO: Rivedere l'uso
+            setOnTouchListener{ _, _ ->
+                if(coordinatorLayout.visibility == View.VISIBLE){
+                    coordinatorLayout.visibility = View.GONE
+                }
+                if(detailLayout.visibility == View.VISIBLE){
+                    detailLayout.visibility = View.GONE
+                }
+                false
+            }
         }
 
     }
@@ -216,6 +368,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             btnCategorySelect.setOnClickListener {
+                // TODO: Trovare l'id del layoutCategories ->(R.id.layoutCategories)
                 if(layoutCategories.visibility == View.VISIBLE){
                     layoutCategories.visibility = View.GONE
                 }else {
@@ -297,168 +450,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-
-
-    /*    override fun onCreate(savedInstanceState: Bundle?) {
-
-            ColorTagMap["Monumenti"] = ::onMonumentiClick
-            ColorTagMap["CTM"] = ::onCTMClick
-            ColorTagMap["Curiosita"] = ::onCuriositaClick
-            ColorTagMap["Parchi"] = ::onParchiClick
-            ColorTagMap["Epoche"] = ::onEpocheClick
-
-            super.onCreate(savedInstanceState)
-            setContentView(R.layout.activity_main)
-
-            CurrentText = findViewById(R.id.NameText)
-            CurrentButton = findViewById(R.id.buttonOther)
-
-            val displayMetrics = DisplayMetrics()
-            val windowManager = this.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-            display= windowManager.defaultDisplay
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                display.getRealMetrics(displayMetrics)
-            } else {
-                @Suppress("DEPRECATION")
-                display.getMetrics(displayMetrics)
-            }
-
-            jsonString = loadJSONResource(this.applicationContext, R.raw.markers).toString()
-
-            compactLayout = findViewById(R.id.compactLayout)
-            coordinatorLayout = findViewById(R.id.coordinatorLayout)
-            detailLayout = findViewById(R.id.relativeLayout)
-            includeLayout = detailLayout.findViewById(R.id.compactLayout)
-            layoutCategories = findViewById(R.id.layoutCategories)
-            imageContainer = findViewById(R.id.imageContainer)
-            imageLayout = findViewById(R.id.imageLayout)
-
-            detailLayout.layoutParams.height = displayMetrics.heightPixels - 100
-
-            coordinatorLayout.visibility = View.GONE
-            detailLayout.visibility = View.GONE
-
-            locationRequest = LocationRequest.create().apply {
-                interval = LOCATION_UPDATE_INTERVAL
-                fastestInterval = LOCATION_UPDATE_FASTEST_INTERVAL
-                priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-            }
-
-            locationCallback = object : LocationCallback() {
-                override fun onLocationResult(locationResult: LocationResult) {
-                    locationResult.lastLocation?.let { handleLocationResult(it) }
-                }
-            }
-
-
-            imageLayout.setOnClickListener {
-                if(imageLayout.visibility == View.VISIBLE){
-                    imageLayout.visibility = View.GONE
-                }
-            }
-
-            coordinatorLayout.setOnTouchListener(object : View.OnTouchListener {
-                private val MIN_SWIPE_DISTANCE = 100
-                private val MAX_SWIPE_DURATION = 300
-
-                private var startY: Float = 0f
-                private var startTime: Long = 0
-
-                override fun onTouch(v: View, event: MotionEvent): Boolean {
-                    when (event.action) {
-                        MotionEvent.ACTION_DOWN -> {
-                            startY = event.y
-                            startTime = System.currentTimeMillis()
-                            return true
-                        }
-                        MotionEvent.ACTION_UP -> {
-                            val endY = event.y
-                            val endTime = System.currentTimeMillis()
-
-                            val distance = endY - startY
-                            val duration = endTime - startTime
-
-                            if (distance < -MIN_SWIPE_DISTANCE && duration < MAX_SWIPE_DURATION) {
-                                Toast.makeText(this@MainActivity, "Showing detail", Toast.LENGTH_SHORT).show()
-                                detailLayout.visibility = View.VISIBLE
-                                coordinatorLayout.visibility = View.GONE
-                            }
-
-                            return true
-                        }
-                    }
-                    return false
-                }
-            })
-
-
-            detailLayout.setOnTouchListener(object : View.OnTouchListener {
-                private val MIN_SWIPE_DISTANCE = 100
-                private val MAX_SWIPE_DURATION = 3000
-
-                private var startY: Float = 0f
-                private var startTime: Long = 0
-
-                override fun onTouch(v: View, event: MotionEvent): Boolean {
-                    when (event.action) {
-                        MotionEvent.ACTION_UP -> {
-                            startY = event.y
-                            startTime = System.currentTimeMillis()
-                            return true
-                        }
-                        MotionEvent.ACTION_DOWN -> {
-                            val endY = event.y
-                            val endTime = System.currentTimeMillis()
-
-                            val distance = endY - startY
-                            val duration = endTime - startTime
-
-                            if (distance < -MIN_SWIPE_DISTANCE && duration < MAX_SWIPE_DURATION) {
-                                // Swipe up gesture detected
-                                Toast.makeText(this@MainActivity, "Showing compat", Toast.LENGTH_SHORT).show()
-                                detailLayout.visibility = View.GONE
-                                coordinatorLayout.visibility = View.VISIBLE
-                            }
-
-                            return true
-                        }
-                    }
-                    return false
-                }
-            })
-
-            val btnCenterMap: ImageButton = findViewById(R.id.btnCenterMap)
-            btnCenterMap.setOnClickListener {
-                centerMapOnUserPosition()
-            }
-
-            searchBarEditText = findViewById(R.id.searchBarEditText)
-
-            searchBarEditText.doOnTextChanged{text, start, before, count ->
-
-                if(text.isNullOrEmpty()){
-                    for (marker in AllMarkers){
-                        if(!(SearchResult.contains(marker))){
-                            reenableMarker(marker)
-                        }
-                    }
-
-                    SearchResult.clear()
-                }
-            }
-
-            mapView?.setOnTouchListener{ _, _ ->
-                if(coordinatorLayout.visibility == View.VISIBLE){
-                    coordinatorLayout.visibility = View.GONE
-                }
-                if(detailLayout.visibility == View.VISIBLE){
-                    detailLayout.visibility = View.GONE
-                }
-                false
-            }
-
-        }*/
 
 
     private fun reenableMarker(marker: PointAnnotation){
