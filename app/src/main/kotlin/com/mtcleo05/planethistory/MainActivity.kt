@@ -60,44 +60,33 @@ import kotlin.math.sqrt
 
 class MainActivity : AppCompatActivity() {
 
-
-    private lateinit var jsonString: String
+    private val activeAnnotations: MutableMap<String, PointAnnotation> = mutableMapOf()
 
     private var latitude: Double = 0.0
     private var longitude: Double = 0.0
     private var mapView: MapView? = null
     private var pointAnnotationManager: PointAnnotationManager? = null
     private var currentLocationMarker: PointAnnotation? = null
-    private val activeAnnotations: MutableMap<String, PointAnnotation> = mutableMapOf()
+    private var isFirstLocationUpdate = true
+    private var SearchResult: MutableList<PointAnnotation> = mutableListOf<PointAnnotation>()
+    private var monumentiEnabled: Boolean = false
+    private var ctmEnabled: Boolean = false
+    private var curiositaEnabled: Boolean = false
+    private var parchiEnabled: Boolean = false
+    private var epocheEnabled: Boolean = false
+    private var markerManager = MarkerManager()
 
     private lateinit var coordinatorLayout: RelativeLayout
     private lateinit var detailLayout: RelativeLayout
     private lateinit var colorChangeBackground: GradientDrawable
     private lateinit var imageContainer: LinearLayout
     private lateinit var imageLayout: CoordinatorLayout
-
-    private var isFirstLocationUpdate = true
-    private val PCT = 0.00002 // POSITION CHANGE THRESHOLD
+    private lateinit var CurrentText: TextView
+    private lateinit var CurrentButton: Button
     private lateinit var locationRequest: LocationRequest
     private lateinit var locationCallback: LocationCallback
     private lateinit var searchBarEditText: EditText
-    private val LOCATION_PERMISSION_REQUEST_CODE = 177013
-
-    private lateinit var CurrentText: TextView
-    private lateinit var CurrentButton: Button
-
-    private var AllMarkers: MutableList<PointAnnotation> = mutableListOf<PointAnnotation>()
-    private var SearchResult: MutableList<PointAnnotation> = mutableListOf<PointAnnotation>()
-
-    private var monumentiEnabled: Boolean = false
-    private var ctmEnabled: Boolean = false
-    private var curiositaEnabled: Boolean = false
-    private var parchiEnabled: Boolean = false
-    private var epocheEnabled: Boolean = false
-
-
     private lateinit var binding : ActivityMainBinding
-    private var markerManager = MarkerManager()
 
     // Override Methods
     override fun onStart() {
@@ -319,7 +308,7 @@ class MainActivity : AppCompatActivity() {
             pointAnnotationManager = annotations.createPointAnnotationManager()
             pointAnnotationManager?.addClickListener(OnPointAnnotationClickListener {
                     annotation:PointAnnotation ->
-                onMarkerItemClick(annotation)
+//                onMarkerItemClick(annotation)
                 true
             })
             addMarkerToMap()
@@ -540,6 +529,57 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+    private fun onMarkerClick(marker: PointAnnotation, type: MarkerTypes){
+        // TODO: Refactor onMarkerClick Logic
+        when(type) {
+            MarkerTypes.MONUMENTS -> {
+                if (coordinatorLayout.visibility != View.VISIBLE) {
+                    coordinatorLayout.visibility = View.VISIBLE
+                }
+
+                val markerData = marker.getData()
+
+                updateDetailViews(markerData, Color.parseColor("#0000FF"))
+            }
+            MarkerTypes.CTM-> {
+                if (coordinatorLayout.visibility != View.VISIBLE) {
+                    coordinatorLayout.visibility = View.VISIBLE
+                }
+
+                val markerData = marker.getData()
+                updateDetailViews(markerData,Color.parseColor("#FF0000"))
+            }
+            MarkerTypes.CURIOSITY-> {
+                if (coordinatorLayout.visibility != View.VISIBLE) {
+                    coordinatorLayout.visibility = View.VISIBLE
+                }
+
+                val markerData = marker.getData()
+                updateDetailViews(markerData, Color.parseColor("#FFFF00"))
+            }
+            MarkerTypes.PARKS-> {
+                if (coordinatorLayout.visibility != View.VISIBLE) {
+                    coordinatorLayout.visibility = View.VISIBLE
+                }
+
+                val markerData = marker.getData()
+                updateDetailViews(markerData, Color.parseColor("#00FF00"))
+            }
+            MarkerTypes.AGES-> {
+                if (coordinatorLayout.visibility != View.VISIBLE) {
+                    coordinatorLayout.visibility = View.VISIBLE
+                }
+
+                val markerData = marker.getData()
+                updateDetailViews(markerData, Color.parseColor("#FF00FF"))
+            }
+            MarkerTypes.NOTYPE -> {
+                // TODO: Manage Notype case
+            }
+        }
+    }
+
+
     private fun onMiscClick(marker: PointAnnotation) {
         if (coordinatorLayout.visibility != View.VISIBLE) {
             coordinatorLayout.visibility = View.VISIBLE
@@ -632,55 +672,6 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    private fun onMarkerClick(marker: PointAnnotation, type: MarkerTypes){
-        // TODO: Refactor onMarkerClick Logic
-        when(type) {
-            MarkerTypes.MONUMENTS -> {
-                if (coordinatorLayout.visibility != View.VISIBLE) {
-                    coordinatorLayout.visibility = View.VISIBLE
-                }
-
-                val markerData = marker.getData()
-
-                updateDetailViews(markerData, Color.parseColor("#0000FF"))
-            }
-            MarkerTypes.CTM-> {
-                if (coordinatorLayout.visibility != View.VISIBLE) {
-                    coordinatorLayout.visibility = View.VISIBLE
-                }
-
-                val markerData = marker.getData()
-                updateDetailViews(markerData,Color.parseColor("#FF0000"))
-            }
-            MarkerTypes.CURIOSITY-> {
-                if (coordinatorLayout.visibility != View.VISIBLE) {
-                    coordinatorLayout.visibility = View.VISIBLE
-                }
-
-                val markerData = marker.getData()
-                updateDetailViews(markerData, Color.parseColor("#FFFF00"))
-            }
-            MarkerTypes.PARKS-> {
-                if (coordinatorLayout.visibility != View.VISIBLE) {
-                    coordinatorLayout.visibility = View.VISIBLE
-                }
-
-                val markerData = marker.getData()
-                updateDetailViews(markerData, Color.parseColor("#00FF00"))
-            }
-            MarkerTypes.AGES-> {
-                if (coordinatorLayout.visibility != View.VISIBLE) {
-                    coordinatorLayout.visibility = View.VISIBLE
-                }
-
-                val markerData = marker.getData()
-                updateDetailViews(markerData, Color.parseColor("#FF00FF"))
-            }
-            MarkerTypes.NOTYPE -> {
-                // TODO: Manage Notype case
-            }
-        }
-    }
 
 
 
@@ -876,12 +867,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun globalSearch(prompt: String) {
-        for (markerElement in AllMarkers) {
+        for (markerElement in markerManager.getAllPointAnnotationInPointMap()) {
             searchName(prompt, markerElement)
             searchTag(prompt, markerElement)
         }
 
-        for (deleteMarker in AllMarkers){
+        for (deleteMarker in markerManager.getAllPointAnnotationInPointMap()){
             if(!(SearchResult.contains(deleteMarker))){
                 deletePositionMarker(deleteMarker)
             }
@@ -892,5 +883,7 @@ class MainActivity : AppCompatActivity() {
     companion object {
         private const val LOCATION_UPDATE_INTERVAL: Long = 10000 // 10 seconds
         private const val LOCATION_UPDATE_FASTEST_INTERVAL: Long = 5000 // 5 seconds
+        private const val PCT = 0.00002 // POSITION CHANGE THRESHOLD
+        private const val LOCATION_PERMISSION_REQUEST_CODE = 177013
     }
 }
