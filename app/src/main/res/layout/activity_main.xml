@@ -79,7 +79,9 @@
         android:contentDescription="Center Map on Position"
         android:src="@drawable/ic_location" />
 
-    <include layout="@layout/compat_layout"/>
+    <include
+        android:id="@+id/coordinatorLayout"
+        layout="@layout/compat_layout" />
 
     <include layout="@layout/detail_layout"/>
 

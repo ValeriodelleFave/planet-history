@@ -1,8 +1,10 @@
 package com.mtcleo05.planethistory.core.manager
 
 import android.util.Log
+import com.mapbox.maps.plugin.annotation.generated.PointAnnotation
 import com.mtcleo05.planethistory.core.ext.getMarker
 import com.mtcleo05.planethistory.core.model.Marker
+import com.mtcleo05.planethistory.core.model.MarkerTypes
 import com.mtcleo05.planethistory.core.model.MarkerUI
 import com.mtcleo05.planethistory.core.model.mapToUI
 import org.json.JSONArray
@@ -15,6 +17,8 @@ class MarkerManager {
     private val TAG = "MarkerManager"
     private var _markersList: MutableList<MarkerUI> = mutableListOf()
     val markersList get() = _markersList
+    private var pointMap: MutableMap<MarkerTypes, PointAnnotation> = mutableMapOf()
+
     private fun loadJSONResource(input : InputStream) : String?{
         return try {
             val jsonString = input.bufferedReader().use { it.readText() }
@@ -25,13 +29,20 @@ class MarkerManager {
         }
     }
 
-
     fun loadMarkerList(input: InputStream) {
         val jsonArray = JSONArray(loadJSONResource(input))
         for (i in 0 until jsonArray.length()) {
             val marker = (jsonArray[i] as JSONObject).getMarker()
             _markersList.add(marker.mapToUI())
         }
+    }
+
+    fun setPointMap(type:MarkerTypes, point: PointAnnotation){
+        pointMap[type] = point
+    }
+
+    fun getPointByType(type: MarkerTypes){
+
     }
 
 }

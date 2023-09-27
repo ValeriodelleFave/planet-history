@@ -26,6 +26,7 @@ import androidx.appcompat.content.res.AppCompatResources
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.view.isVisible
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
@@ -34,10 +35,17 @@ import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.mapbox.geojson.Point
 import com.mapbox.maps.MapView
+import com.mapbox.maps.plugin.annotation.annotations
 import com.mapbox.maps.plugin.annotation.generated.*
+import com.mapbox.maps.plugin.attribution.attribution
+import com.mapbox.maps.plugin.compass.compass
+import com.mapbox.maps.plugin.logo.logo
+import com.mapbox.maps.plugin.scalebar.scalebar
+import com.mtcleo05.planethistory.core.ext.mapToJsonObject
 import com.mtcleo05.planethistory.core.manager.MarkerManager
 import com.mtcleo05.planethistory.core.model.Marker
 import com.mtcleo05.planethistory.core.model.MarkerTypes
+import com.mtcleo05.planethistory.core.model.MarkerUI
 import com.mtcleo05.planethistory.databinding.ActivityMainBinding
 import java.io.IOException
 import kotlin.math.abs
@@ -132,6 +140,7 @@ class MainActivity : AppCompatActivity() {
         markerManager.loadMarkerList(markersRaw)
 
         setupOnClickListener()
+        setupMap()
 
         
     }
@@ -151,6 +160,25 @@ class MainActivity : AppCompatActivity() {
                 search()
             }
         }
+    }
+
+    private fun setupMap(){
+        binding.mapView.run {
+            getMapboxMap().loadStyleUri("mapbox://styles/ssulf/clhgo1b4901d001qy8wqrgo52")
+            scalebar.enabled = false
+            attribution.enabled = false
+            logo.enabled = false
+            compass.enabled = false
+
+           pointAnnotationManager = annotations.createPointAnnotationManager()
+           pointAnnotationManager?.addClickListener(OnPointAnnotationClickListener {
+                    annotation:PointAnnotation ->
+                onMarkerItemClick(annotation)
+                true
+            })
+            addMarkerToMap()
+        }
+
     }
 
     private fun setupCategoryButtonsOnClickListener(){
@@ -296,21 +324,6 @@ class MainActivity : AppCompatActivity() {
 
             coordinatorLayout.visibility = View.GONE
             detailLayout.visibility = View.GONE
-
-            btnMonumenti = findViewById(R.id.btnMonumenti)
-            btnCTM = findViewById(R.id.btnCTM)
-            btnCuriosita = findViewById(R.id.btnCuriosita)
-            btnEpoche = findViewById(R.id.btnEpoche)
-            btnParchi = findViewById(R.id.btnParchi)
-
-            mapView = findViewById(R.id.mapView)
-            mapView?.getMapboxMap()?.loadStyleUri("mapbox://styles/ssulf/clhgo1b4901d001qy8wqrgo52")
-            pointAnnotationManager = mapView?.annotations?.createPointAnnotationManager()
-
-            mapView?.scalebar?.enabled = false
-            mapView?.attribution?.enabled = false
-            mapView?.logo?.enabled = false
-            mapView?.compass?.enabled = false
 
             locationRequest = LocationRequest.create().apply {
                 interval = LOCATION_UPDATE_INTERVAL
@@ -696,52 +709,27 @@ class MainActivity : AppCompatActivity() {
 
         return null
     }
-/*
-    private fun addMarkerToMap(marker: Marker) {
-        pointAnnotationManager?.addClickListener(OnPointAnnotationClickListener {
-            annotation:PointAnnotation ->
-            onMarkerItemClick(annotation)
-            true
-        })
 
-        bitmapFromDrawableRes(
-            this@MainActivity,
-            R.drawable.green_marker
-        )?.let { markerIcon ->
-            val pointAnnotationOptions: PointAnnotationOptions = PointAnnotationOptions()
+    private fun addMarkerToMap(){
+        markerManager.markersList.forEach { marker ->
+            bitmapFromDrawableRes(
+                this,
+                R.drawable.green_marker
+            )?.let { icon ->
+                val pointAnnotationOptions: PointAnnotationOptions = PointAnnotationOptions()
                 .withPoint(Point.fromLngLat(marker.lng, marker.lat))
-                .withIconImage(markerIcon)
-                .withData(createMarkerData(marker))
+                .withIconImage(icon)
+                .withData(marker.mapToJsonObject())
 
-            val newMarker = pointAnnotationManager?.create(pointAnnotationOptions)
-            newMarker?.let { activeAnnotations[marker.id] = it }
-
-            when (marker.mainTag){
-                "Monumenti" -> ListaMonumenti.add(newMarker!!)
-                "CTM" -> ListaCTM.add(newMarker!!)
-                "Curiosità", "Curiosita" -> ListaCuriosita.add(newMarker!!)
-                "Parchi" -> ListaParchi.add(newMarker!!)
-                "Epoche" -> ListaEpoche.add(newMarker!!)
-                else -> Log.d("", "Problemino")
+                val point = pointAnnotationManager?.create(pointAnnotationOptions)
+                point?.let {
+                    activeAnnotations[marker.id] = it
+                    markerManager.setPointMap(marker.type, point)
+                } //TODO verificare l'effettivo funzionamento
             }
-
-            AllMarkers.add(newMarker!!)
         }
-
-
     }
-*/
-    private fun createMarkerData(marker: Marker): JsonObject {
-        val jsonData = JsonObject()
-        jsonData.addProperty("description", marker.description)
-        jsonData.addProperty("tags", marker.tags.joinToString(", "))
-        jsonData.addProperty("mainTag", marker.mainTag)
-        jsonData.addProperty("markerName", marker.markerName)
-        jsonData.addProperty("lat", marker.lat)
-        jsonData.addProperty("lng", marker.lng)
-        jsonData.addProperty("images", marker.images.joinToString(", "))
-        return jsonData
-    }
+
 
     private fun bitmapFromDrawableRes(context: Context, @DrawableRes resId: Int): Bitmap? {
         val drawable: Drawable? = AppCompatResources.getDrawable(context, resId)
@@ -787,19 +775,20 @@ class MainActivity : AppCompatActivity() {
 
     private fun onMarkerItemClick(marker: PointAnnotation) {
 
-        if (coordinatorLayout.visibility != View.VISIBLE) {
-            coordinatorLayout.visibility = View.VISIBLE
-        }
+        binding.coordinatorLayout.root.isVisible = coordinatorLayout.visibility != View.VISIBLE
 
         val markerData = marker.getData()
-        val mainTag = markerData?.asJsonObject?.get("mainTag").toString().removeSurrounding("\"")
+        val type = markerData?.asJsonObject?.get("type").toString().toInt()
 
-        if (ColorTagMap.containsKey(mainTag)) {
-            val function = ColorTagMap[mainTag]
-            function?.invoke(marker)
-        } else {
-            onMiscClick(marker)
+        when(type){
+            MarkerTypes.MONUMENTS.ordinal -> onMarkerClick(marker,MarkerTypes.MONUMENTS)
+            MarkerTypes.CTM.ordinal -> onMarkerClick(marker,MarkerTypes.CTM)
+            MarkerTypes.CURIOSITY.ordinal -> onMarkerClick(marker,MarkerTypes.CURIOSITY)
+            MarkerTypes.PARKS.ordinal -> onMarkerClick(marker,MarkerTypes.PARKS)
+            MarkerTypes.AGES.ordinal -> onMarkerClick(marker,MarkerTypes.AGES)
+            else -> onMiscClick(marker)
         }
+
     }
 
     private fun updateDetailViews(markerData: JsonElement?, color: Int) {
@@ -885,7 +874,8 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    private fun onMarkerClick(marker: PointAnnotation, type: MarkerTypes){ // TODO: Refactor onMarkerClick Logic
+    private fun onMarkerClick(marker: PointAnnotation, type: MarkerTypes){
+        // TODO: Refactor onMarkerClick Logic
         when(type) {
             MarkerTypes.MONUMENTS -> {
                 if (coordinatorLayout.visibility != View.VISIBLE) {

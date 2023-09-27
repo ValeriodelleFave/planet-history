@@ -1,6 +1,8 @@
 package com.mtcleo05.planethistory.core.ext
 
+import com.google.gson.JsonObject
 import com.mtcleo05.planethistory.core.model.Marker
+import com.mtcleo05.planethistory.core.model.MarkerUI
 import org.json.JSONObject
 
 fun JSONObject.getMarker() : Marker {
@@ -27,4 +29,16 @@ fun JSONObject.getMarker() : Marker {
         id = this.getString("id"),
         images = imageList
     )
+}
+
+fun MarkerUI.mapToJsonObject() : JsonObject{
+    val jsonData = JsonObject()
+    jsonData.addProperty("description", description)
+    jsonData.addProperty("tags", tags.joinToString(", "))
+    jsonData.addProperty("type", type.ordinal)
+    jsonData.addProperty("markerName", markerName)
+    jsonData.addProperty("lat", lat)
+    jsonData.addProperty("lng", lng)
+    jsonData.addProperty("images", images.joinToString(", "))
+    return jsonData
 }
