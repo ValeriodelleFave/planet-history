@@ -1,6 +1,7 @@
 package com.mtcleo05.planethistory
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -19,6 +20,7 @@ import android.provider.Settings
 import android.util.DisplayMetrics
 import android.util.Log
 import android.view.*
+import android.view.View.OnTouchListener
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
 import androidx.annotation.DrawableRes
@@ -132,6 +134,7 @@ class MainActivity : AppCompatActivity() {
         stopLocationUpdates()
     }
 
+    //TODO BEST SOLUTION
     private fun getDisplayMetrics(): DisplayMetrics {
         val displayMetrics = DisplayMetrics()
         val windowManager = this.getSystemService(Context.WINDOW_SERVICE) as WindowManager
@@ -145,98 +148,104 @@ class MainActivity : AppCompatActivity() {
         return displayMetrics
     }
 
+    @SuppressLint("ClickableViewAccessibility") //Caused by OnTouchListener for Custom motion layout see documentation for MotionLayout class
     private fun setCoordinatorLayout() {
-        coordinatorLayout = findViewById(R.id.coordinatorLayout)
-        coordinatorLayout.visibility = View.GONE
-        coordinatorLayout.setOnTouchListener(object : View.OnTouchListener {
-            private val MIN_SWIPE_DISTANCE = 100
-            private val MAX_SWIPE_DURATION = 300
+        binding.run {
+            coordinatorLayout.run{
+                root.isVisible = false
+                root.setOnTouchListener( object : OnTouchListener{
+                    private val MIN_SWIPE_DISTANCE = 100
+                    private val MAX_SWIPE_DURATION = 300
 
-            private var startY: Float = 0f
-            private var startTime: Long = 0
+                    private var startY: Float = 0f
+                    private var startTime: Long = 0
 
-            override fun onTouch(v: View, event: MotionEvent): Boolean {
-                when (event.action) {
-                    MotionEvent.ACTION_DOWN -> {
-                        startY = event.y
-                        startTime = System.currentTimeMillis()
-                        return true
-                    }
-                    MotionEvent.ACTION_UP -> {
-                        val endY = event.y
-                        val endTime = System.currentTimeMillis()
+                    override fun onTouch(v: View?, event: MotionEvent?): Boolean {
+                        when (event?.action) {
+                            MotionEvent.ACTION_DOWN -> {
+                                startY = event.y
+                                startTime = System.currentTimeMillis()
+                                return true
+                            }
+                            MotionEvent.ACTION_UP -> {
+                                val endY = event.y
+                                val endTime = System.currentTimeMillis()
 
-                        val distance = endY - startY
-                        val duration = endTime - startTime
+                                val distance = endY - startY
+                                val duration = endTime - startTime
 
-                        if (distance < -MIN_SWIPE_DISTANCE && duration < MAX_SWIPE_DURATION) {
-                            Toast.makeText(this@MainActivity, "Showing detail", Toast.LENGTH_SHORT).show()
-                            detailLayout.visibility = View.VISIBLE
-                            coordinatorLayout.visibility = View.GONE
+                                if (distance < -MIN_SWIPE_DISTANCE && duration < MAX_SWIPE_DURATION) {
+                                    Toast.makeText(this@MainActivity, "Showing detail", Toast.LENGTH_SHORT).show()
+                                    binding.detailLayout.root.isVisible = true
+                                    root.isVisible = false
+                                }
+
+                                return true
+                            }
                         }
-
-                        return true
+                        return false
                     }
-                }
-                return false
+                })
             }
-        })
+        }
     }
-
+    @SuppressLint("ClickableViewAccessibility") //Caused by OnTouchListener for Custom motion layout see documentation for MotionLayout class
     private fun setDetailLayout(displayMetrics: DisplayMetrics) {
-        detailLayout = findViewById(R.id.relativeLayout)
-        detailLayout.layoutParams.height = displayMetrics.heightPixels - 100
-        detailLayout.visibility = View.GONE
-        detailLayout.setOnTouchListener(object : View.OnTouchListener {
-            private val MIN_SWIPE_DISTANCE = 100
-            private val MAX_SWIPE_DURATION = 3000
+        binding.run {
+            detailLayout.run {
+                root.layoutParams.height = displayMetrics.heightPixels - 100
+                root.isVisible = false
+                root.setOnTouchListener(object : OnTouchListener{
+                    private val MIN_SWIPE_DISTANCE = 100
+                    private val MAX_SWIPE_DURATION = 3000
 
-            private var startY: Float = 0f
-            private var startTime: Long = 0
+                    private var startY: Float = 0f
+                    private var startTime: Long = 0
 
-            override fun onTouch(v: View, event: MotionEvent): Boolean {
-                when (event.action) {
-                    MotionEvent.ACTION_UP -> {
-                        startY = event.y
-                        startTime = System.currentTimeMillis()
-                        return true
-                    }
-                    MotionEvent.ACTION_DOWN -> {
-                        val endY = event.y
-                        val endTime = System.currentTimeMillis()
+                    override fun onTouch(v: View?, event: MotionEvent?): Boolean {
+                        when (event?.action) {
+                            MotionEvent.ACTION_UP -> {
+                                startY = event.y
+                                startTime = System.currentTimeMillis()
+                                return true
+                            }
+                            MotionEvent.ACTION_DOWN -> {
+                                val endY = event.y
+                                val endTime = System.currentTimeMillis()
 
-                        val distance = endY - startY
-                        val duration = endTime - startTime
+                                val distance = endY - startY
+                                val duration = endTime - startTime
 
-                        if (distance < -MIN_SWIPE_DISTANCE && duration < MAX_SWIPE_DURATION) {
-                            // Swipe up gesture detected
-                            Toast.makeText(this@MainActivity, "Showing compat", Toast.LENGTH_SHORT).show()
-                            detailLayout.visibility = View.GONE
-                            coordinatorLayout.visibility = View.VISIBLE
+                                if (distance < -MIN_SWIPE_DISTANCE && duration < MAX_SWIPE_DURATION) {
+                                    // Swipe up gesture detected
+                                    Toast.makeText(this@MainActivity, "Showing compat", Toast.LENGTH_SHORT).show()
+                                    root.isVisible = false
+                                    binding.coordinatorLayout.root.isVisible = true
+                                }
+
+                                return true
+                            }
                         }
-
-                        return true
+                        return false
                     }
-                }
-                return false
+                })
             }
-        })
+        }
     }
 
     private fun setImageLayout() {
-        imageLayout = findViewById(R.id.imageLayout)
-        imageLayout.setOnClickListener {
-            if(imageLayout.visibility == View.VISIBLE){
-                imageLayout.visibility = View.GONE
+        binding.run {
+            imageFullScreen.run {
+                root.setOnClickListener {
+                    root.isVisible = !root.isVisible
+                }
             }
         }
     }
 
     private fun setBtnCenterMap() {
-        binding.btnCenterMap.run {
-            setOnClickListener {
-                centerMapOnUserPosition()
-            }
+        binding.btnCenterMap.setOnClickListener {
+            centerMapOnUserPosition()
         }
     }
 
@@ -325,8 +334,8 @@ class MainActivity : AppCompatActivity() {
             logo.enabled = false
             compass.enabled = false
 
-           pointAnnotationManager = annotations.createPointAnnotationManager()
-           pointAnnotationManager?.addClickListener(OnPointAnnotationClickListener {
+            pointAnnotationManager = annotations.createPointAnnotationManager()
+            pointAnnotationManager?.addClickListener(OnPointAnnotationClickListener {
                     annotation:PointAnnotation ->
                 onMarkerItemClick(annotation)
                 true
@@ -529,9 +538,9 @@ class MainActivity : AppCompatActivity() {
                 R.drawable.green_marker
             )?.let { icon ->
                 val pointAnnotationOptions: PointAnnotationOptions = PointAnnotationOptions()
-                .withPoint(Point.fromLngLat(marker.lng, marker.lat))
-                .withIconImage(icon)
-                .withData(marker.mapToJsonObject())
+                    .withPoint(Point.fromLngLat(marker.lng, marker.lat))
+                    .withIconImage(icon)
+                    .withData(marker.mapToJsonObject())
 
                 val point = pointAnnotationManager?.create(pointAnnotationOptions)
                 point?.let {
@@ -588,7 +597,7 @@ class MainActivity : AppCompatActivity() {
         }
 
     }
-    
+
     private fun onMiscClick(marker: PointAnnotation) {
         if (coordinatorLayout.visibility != View.VISIBLE) {
             coordinatorLayout.visibility = View.VISIBLE
@@ -837,9 +846,9 @@ class MainActivity : AppCompatActivity() {
 
 
     // TODO: Refactor Search Logic
-        private fun search(){
-            val searchText = searchBarEditText.text.toString()
-            globalSearch(searchText)
+    private fun search(){
+        val searchText = searchBarEditText.text.toString()
+        globalSearch(searchText)
     }
 
     private fun searchName(prompt: String, markerElement: PointAnnotation){

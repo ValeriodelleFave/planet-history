@@ -83,9 +83,13 @@
         android:id="@+id/coordinatorLayout"
         layout="@layout/compat_layout" />
 
-    <include layout="@layout/detail_layout"/>
+    <include
+        android:id="@+id/detailLayout"
+        layout="@layout/detail_layout"/>
 
-    <include layout="@layout/image_fullscreen"
+    <include
+        android:id="@+id/imageFullScreen"
+        layout="@layout/image_fullscreen"
         android:visibility="gone"/>
 
 </FrameLayout>
