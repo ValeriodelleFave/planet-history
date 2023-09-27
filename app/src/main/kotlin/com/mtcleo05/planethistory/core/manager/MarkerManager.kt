@@ -45,4 +45,8 @@ class MarkerManager {
         return pointMap.filter { it.key == type }
     }
 
+    fun getAllPointAnnotationInPointMap(): MutableCollection<PointAnnotation> {
+        return pointMap.values
+    }
+
 }
