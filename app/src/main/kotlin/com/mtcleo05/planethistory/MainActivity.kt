@@ -141,8 +141,22 @@ class MainActivity : AppCompatActivity() {
 
         setupOnClickListener()
         setupMap()
+   
+    }
 
-        
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                startLocationUpdates()
+            } else {
+                showLocationPermissionDeniedDialog()
+            }
+        }
     }
 
     // Private Methods
@@ -446,107 +460,6 @@ class MainActivity : AppCompatActivity() {
 
         }*/
 
-    private fun search(){
-            val searchText = searchBarEditText.text.toString()
-            globalSearch(searchText)
-    }
-
-    private fun searchName(prompt: String, markerElement: PointAnnotation){
-        val markerData = markerElement.getData()
-        val markerName = markerData?.asJsonObject?.get("markerName").toString().removeSurrounding("\"")
-
-        if(markerName.lowercase().contains(prompt.lowercase())){
-            if(!(SearchResult.contains(markerElement))){
-                SearchResult.add(markerElement)
-            }
-        }
-    }
-    private fun searchTag(prompt: String, markerElement: PointAnnotation){
-        val markerData = markerElement.getData()
-        val markerMainTag = markerData?.asJsonObject?.get("mainTag").toString().removeSurrounding("\"")
-
-        if(markerMainTag.lowercase().contains(prompt.lowercase())){
-            if(!(SearchResult.contains(markerElement))) {
-                SearchResult.add(markerElement)
-            }
-        }
-    }
-
-    private fun SearchResultCameraPosition() {
-        var maxLatitude = Double.MIN_VALUE
-        var minLatitude = Double.MAX_VALUE
-        var maxLongitude = Double.MIN_VALUE
-        var minLongitude = Double.MAX_VALUE
-
-        for (markerElement in SearchResult) {
-            val markerData = markerElement.getData()
-
-            val latitude = markerData?.asJsonObject?.get("lat")?.asDouble!!
-            val longitude = markerData.asJsonObject?.get("lng")?.asDouble!!
-
-            if (latitude > maxLatitude) {
-                maxLatitude = latitude
-            }
-            if (latitude < minLatitude) {
-                minLatitude = latitude
-            }
-            if (longitude > maxLongitude) {
-                maxLongitude = longitude
-            }
-            if (longitude < minLongitude) {
-                minLongitude = longitude
-            }
-        }
-
-        val optimalLatitude = (maxLatitude + minLatitude) / 2
-        val optimalLongitude = (maxLongitude + minLongitude) / 2
-
-        val distance = calculateDistance(maxLatitude, maxLongitude, minLatitude, minLongitude)
-
-        val zoomLevel = calculateZoomLevel(distance, 13.0)
-
-        mapView?.getMapboxMap()?.setCamera(
-            com.mapbox.maps.CameraOptions.Builder()
-                .center(Point.fromLngLat(optimalLongitude, optimalLatitude))
-                .zoom(zoomLevel)
-                .build()
-        )
-    }
-
-    private fun calculateDistance(
-        lat1: Double,
-        lon1: Double,
-        lat2: Double,
-        lon2: Double
-    ): Double {
-        val p = Math.PI / 180
-        val a = 0.5 - cos((lat2 - lat1) * p) / 2 +
-                cos(lat1 * p) * cos(lat2 * p) *
-                (1 - cos((lon2 - lon1) * p)) / 2
-        return 2 * 6371000 * asin(sqrt(a))
-    }
-
-    private fun calculateZoomLevel(distance: Double, maxZoom: Double): Double {
-        val defaultZoom = 15.0 // Adjust this value as needed
-        val zoomFactor = 156412.0 // Adjust this value as needed
-        val zoomLevel = defaultZoom - log2(distance) + log2(zoomFactor)
-        return zoomLevel.coerceAtMost(maxZoom)
-    }
-
-    private fun globalSearch(prompt: String) {
-        for (markerElement in AllMarkers) {
-            searchName(prompt, markerElement)
-            searchTag(prompt, markerElement)
-        }
-
-        for (deleteMarker in AllMarkers){
-            if(!(SearchResult.contains(deleteMarker))){
-                deletePositionMarker(deleteMarker)
-            }
-        }
-
-        SearchResultCameraPosition()
-    }
 
     private fun reenableMarker(marker: PointAnnotation){
         val options = PointAnnotationOptions().withPoint(marker.point).withIconImage(bitmapFromDrawableRes(this@MainActivity, R.drawable.green_marker)!!)
@@ -554,98 +467,6 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    private fun centerMapOnUserPosition() {
-        mapView?.getMapboxMap()?.setCamera(
-            com.mapbox.maps.CameraOptions.Builder()
-                .center(Point.fromLngLat(longitude, latitude))
-                .zoom(13.0)
-                .build()
-        )
-    }
-
-    private fun hasLocationPermission(): Boolean {
-        return ContextCompat.checkSelfPermission(
-            this,
-            Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-    }
-
-    private fun requestLocationPermission() {
-        if (isLocationServiceEnabled()) {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                LOCATION_PERMISSION_REQUEST_CODE
-            )
-        } else {
-            showLocationServiceDisabledDialog()
-        }
-    }
-
-    private fun showLocationServiceDisabledDialog() {
-        AlertDialog.Builder(this)
-            .setTitle("Location Service Disabled")
-            .setMessage("This app requires the location service to be enabled. Please enable the location service to proceed.")
-            .setPositiveButton("Enable") { _, _ ->
-                openLocationSettings()
-            }
-            .setNegativeButton("Cancel") { _, _ ->
-                finish()
-            }
-            .setCancelable(false)
-            .show()
-
-    }
-
-    private fun openLocationSettings() {
-        val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
-        startActivity(intent)
-    }
-
-    private fun isLocationServiceEnabled(): Boolean {
-        val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
-    }
-
-    private fun showLocationPermissionDeniedDialog() {
-        MaterialAlertDialogBuilder(this)
-            .setTitle("Location Permission Required")
-            .setMessage("This app requires access to your device's location. Please grant the location permission in the app settings.")
-            .setPositiveButton("App Settings") { _, _ ->
-                openAppSettings()
-            }
-            .setNegativeButton("Close App") { _, _ ->
-                finish()
-            }
-            .setCancelable(false)
-            .show()
-    }
-
-    private fun openAppSettings() {
-        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-        intent.data = Uri.fromParts("package", packageName, null)
-        startActivity(intent)
-    }
-
-    private fun startLocationUpdates() {
-        if (hasLocationPermission()) {
-            try {
-                val fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-                fusedLocationClient.requestLocationUpdates(
-                    locationRequest,
-                    locationCallback,
-                    null
-                )
-            } catch (e: SecurityException) {
-                e.printStackTrace()
-            }
-        }
-    }
-
-    private fun stopLocationUpdates() {
-        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-        fusedLocationClient.removeLocationUpdates(locationCallback)
-    }
 
     private fun handleLocationResult(location: Location) {
         val zoomLevel = 15.0
@@ -758,20 +579,6 @@ class MainActivity : AppCompatActivity() {
         return bitmap
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                startLocationUpdates()
-            } else {
-                showLocationPermissionDeniedDialog()
-            }
-        }
-    }
 
     private fun onMarkerItemClick(marker: PointAnnotation) {
 
@@ -789,6 +596,15 @@ class MainActivity : AppCompatActivity() {
             else -> onMiscClick(marker)
         }
 
+    }
+    
+    private fun onMiscClick(marker: PointAnnotation) {
+        if (coordinatorLayout.visibility != View.VISIBLE) {
+            coordinatorLayout.visibility = View.VISIBLE
+        }
+
+        val markerData = marker.getData()
+        updateDetailViews(markerData, Color.parseColor("#6e6e6e"))
     }
 
     private fun updateDetailViews(markerData: JsonElement?, color: Int) {
@@ -924,12 +740,211 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun onMiscClick(marker: PointAnnotation) {
-        if (coordinatorLayout.visibility != View.VISIBLE) {
-            coordinatorLayout.visibility = View.VISIBLE
+
+
+
+
+    // TODO: Review Localization Logic
+    private fun centerMapOnUserPosition() {
+        mapView?.getMapboxMap()?.setCamera(
+            com.mapbox.maps.CameraOptions.Builder()
+                .center(Point.fromLngLat(longitude, latitude))
+                .zoom(13.0)
+                .build()
+        )
+    }
+
+    private fun hasLocationPermission(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun requestLocationPermission() {
+        if (isLocationServiceEnabled()) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                LOCATION_PERMISSION_REQUEST_CODE
+            )
+        } else {
+            showLocationServiceDisabledDialog()
+        }
+    }
+
+    private fun showLocationServiceDisabledDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("Location Service Disabled")
+            .setMessage("This app requires the location service to be enabled. Please enable the location service to proceed.")
+            .setPositiveButton("Enable") { _, _ ->
+                openLocationSettings()
+            }
+            .setNegativeButton("Cancel") { _, _ ->
+                finish()
+            }
+            .setCancelable(false)
+            .show()
+
+    }
+
+    private fun openLocationSettings() {
+        val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+        startActivity(intent)
+    }
+
+    private fun isLocationServiceEnabled(): Boolean {
+        val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+    }
+
+    private fun showLocationPermissionDeniedDialog() {
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Location Permission Required")
+            .setMessage("This app requires access to your device's location. Please grant the location permission in the app settings.")
+            .setPositiveButton("App Settings") { _, _ ->
+                openAppSettings()
+            }
+            .setNegativeButton("Close App") { _, _ ->
+                finish()
+            }
+            .setCancelable(false)
+            .show()
+    }
+
+    private fun openAppSettings() {
+        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+        intent.data = Uri.fromParts("package", packageName, null)
+        startActivity(intent)
+    }
+
+    private fun startLocationUpdates() {
+        if (hasLocationPermission()) {
+            try {
+                val fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+                fusedLocationClient.requestLocationUpdates(
+                    locationRequest,
+                    locationCallback,
+                    null
+                )
+            } catch (e: SecurityException) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    private fun stopLocationUpdates() {
+        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        fusedLocationClient.removeLocationUpdates(locationCallback)
+    }
+
+
+
+
+
+
+
+
+    // TODO: Refactor Search Logic
+        private fun search(){
+            val searchText = searchBarEditText.text.toString()
+            globalSearch(searchText)
+    }
+
+    private fun searchName(prompt: String, markerElement: PointAnnotation){
+        val markerData = markerElement.getData()
+        val markerName = markerData?.asJsonObject?.get("markerName").toString().removeSurrounding("\"")
+
+        if(markerName.lowercase().contains(prompt.lowercase())){
+            if(!(SearchResult.contains(markerElement))){
+                SearchResult.add(markerElement)
+            }
+        }
+    }
+    private fun searchTag(prompt: String, markerElement: PointAnnotation){
+        val markerData = markerElement.getData()
+        val markerMainTag = markerData?.asJsonObject?.get("mainTag").toString().removeSurrounding("\"")
+
+        if(markerMainTag.lowercase().contains(prompt.lowercase())){
+            if(!(SearchResult.contains(markerElement))) {
+                SearchResult.add(markerElement)
+            }
+        }
+    }
+
+    private fun SearchResultCameraPosition() {
+        var maxLatitude = Double.MIN_VALUE
+        var minLatitude = Double.MAX_VALUE
+        var maxLongitude = Double.MIN_VALUE
+        var minLongitude = Double.MAX_VALUE
+
+        for (markerElement in SearchResult) {
+            val markerData = markerElement.getData()
+
+            val latitude = markerData?.asJsonObject?.get("lat")?.asDouble!!
+            val longitude = markerData.asJsonObject?.get("lng")?.asDouble!!
+
+            if (latitude > maxLatitude) {
+                maxLatitude = latitude
+            }
+            if (latitude < minLatitude) {
+                minLatitude = latitude
+            }
+            if (longitude > maxLongitude) {
+                maxLongitude = longitude
+            }
+            if (longitude < minLongitude) {
+                minLongitude = longitude
+            }
         }
 
-        val markerData = marker.getData()
-        updateDetailViews(markerData, Color.parseColor("#6e6e6e"))
+        val optimalLatitude = (maxLatitude + minLatitude) / 2
+        val optimalLongitude = (maxLongitude + minLongitude) / 2
+
+        val distance = calculateDistance(maxLatitude, maxLongitude, minLatitude, minLongitude)
+
+        val zoomLevel = calculateZoomLevel(distance, 13.0)
+
+        mapView?.getMapboxMap()?.setCamera(
+            com.mapbox.maps.CameraOptions.Builder()
+                .center(Point.fromLngLat(optimalLongitude, optimalLatitude))
+                .zoom(zoomLevel)
+                .build()
+        )
+    }
+
+    private fun calculateDistance(
+        lat1: Double,
+        lon1: Double,
+        lat2: Double,
+        lon2: Double
+    ): Double {
+        val p = Math.PI / 180
+        val a = 0.5 - cos((lat2 - lat1) * p) / 2 +
+                cos(lat1 * p) * cos(lat2 * p) *
+                (1 - cos((lon2 - lon1) * p)) / 2
+        return 2 * 6371000 * asin(sqrt(a))
+    }
+
+    private fun calculateZoomLevel(distance: Double, maxZoom: Double): Double {
+        val defaultZoom = 15.0 // Adjust this value as needed
+        val zoomFactor = 156412.0 // Adjust this value as needed
+        val zoomLevel = defaultZoom - log2(distance) + log2(zoomFactor)
+        return zoomLevel.coerceAtMost(maxZoom)
+    }
+
+    private fun globalSearch(prompt: String) {
+        for (markerElement in AllMarkers) {
+            searchName(prompt, markerElement)
+            searchTag(prompt, markerElement)
+        }
+
+        for (deleteMarker in AllMarkers){
+            if(!(SearchResult.contains(deleteMarker))){
+                deletePositionMarker(deleteMarker)
+            }
+        }
+
+        SearchResultCameraPosition()
     }
 }
