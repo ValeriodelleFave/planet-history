@@ -41,8 +41,8 @@ class MarkerManager {
         pointMap[type] = point
     }
 
-    fun getPointByType(type: MarkerTypes){
-
+    fun getPointByType(type: MarkerTypes) : Map<MarkerTypes,PointAnnotation> {
+        return pointMap.filter { it.key == type }
     }
 
 }

@@ -18,7 +18,6 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.util.DisplayMetrics
-import android.util.Log
 import android.view.*
 import android.view.View.OnTouchListener
 import android.view.inputmethod.InputMethodManager
@@ -38,7 +37,6 @@ import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.gson.JsonElement
-import com.google.gson.JsonObject
 import com.mapbox.geojson.Point
 import com.mapbox.maps.MapView
 import com.mapbox.maps.plugin.annotation.annotations
@@ -49,11 +47,8 @@ import com.mapbox.maps.plugin.logo.logo
 import com.mapbox.maps.plugin.scalebar.scalebar
 import com.mtcleo05.planethistory.core.ext.mapToJsonObject
 import com.mtcleo05.planethistory.core.manager.MarkerManager
-import com.mtcleo05.planethistory.core.model.Marker
 import com.mtcleo05.planethistory.core.model.MarkerTypes
-import com.mtcleo05.planethistory.core.model.MarkerUI
 import com.mtcleo05.planethistory.databinding.ActivityMainBinding
-import java.io.IOException
 import kotlin.math.abs
 import kotlin.math.asin
 import kotlin.math.cos
@@ -96,11 +91,6 @@ class MainActivity : AppCompatActivity() {
 
     private var AllMarkers: MutableList<PointAnnotation> = mutableListOf<PointAnnotation>()
     private var SearchResult: MutableList<PointAnnotation> = mutableListOf<PointAnnotation>()
-    private var ListaMonumenti: MutableList<PointAnnotation> = mutableListOf<PointAnnotation>()
-    private var ListaCTM: MutableList<PointAnnotation> = mutableListOf<PointAnnotation>()
-    private var ListaCuriosita: MutableList<PointAnnotation> = mutableListOf<PointAnnotation>()
-    private var ListaParchi: MutableList<PointAnnotation> = mutableListOf<PointAnnotation>()
-    private var ListaEpoche: MutableList<PointAnnotation> = mutableListOf<PointAnnotation>()
 
     private var monumentiEnabled: Boolean = true
     private var ctmEnabled: Boolean = true
@@ -108,11 +98,6 @@ class MainActivity : AppCompatActivity() {
     private var parchiEnabled: Boolean = true
     private var epocheEnabled: Boolean = true
 
-    private lateinit var display: Display
-    companion object {
-        private const val LOCATION_UPDATE_INTERVAL: Long = 10000 // 10 seconds
-        private const val LOCATION_UPDATE_FASTEST_INTERVAL: Long = 5000 // 5 seconds
-    }
 
     private lateinit var binding : ActivityMainBinding
     private var markerManager = MarkerManager()
@@ -138,7 +123,8 @@ class MainActivity : AppCompatActivity() {
     private fun getDisplayMetrics(): DisplayMetrics {
         val displayMetrics = DisplayMetrics()
         val windowManager = this.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        display = windowManager.defaultDisplay
+        val display = windowManager.defaultDisplay
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             display.getRealMetrics(displayMetrics)
         } else {
@@ -152,7 +138,6 @@ class MainActivity : AppCompatActivity() {
     private fun setCoordinatorLayout() {
         binding.run {
             coordinatorLayout.run{
-                root.isVisible = false
                 root.setOnTouchListener( object : OnTouchListener{
                     private val MIN_SWIPE_DISTANCE = 100
                     private val MAX_SWIPE_DURATION = 300
@@ -325,7 +310,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-
+    @SuppressLint("ClickableViewAccessibility") //Caused by OnTouchListener for Custom motion layout see documentation for MotionLayout class
     private fun setupMap(){
         binding.mapView.run {
             getMapboxMap().loadStyleUri("mapbox://styles/ssulf/clhgo1b4901d001qy8wqrgo52")
@@ -341,114 +326,104 @@ class MainActivity : AppCompatActivity() {
                 true
             })
             addMarkerToMap()
-
-            // TODO: Rivedere l'uso
-            setOnTouchListener{ _, _ ->
-                if(coordinatorLayout.visibility == View.VISIBLE){
-                    coordinatorLayout.visibility = View.GONE
-                }
-                if(detailLayout.visibility == View.VISIBLE){
-                    detailLayout.visibility = View.GONE
-                }
-                false
-            }
         }
-
     }
 
     private fun setupCategoryButtonsOnClickListener(){
         binding.run {
             categoryLayout.run {
                 btnMonumenti.setOnClickListener {
-                    disableCategory(MarkerTypes.MONUMENTS)
+                    showCategory(MarkerTypes.MONUMENTS)
                 }
                 btnCTM.setOnClickListener {
-                    disableCategory(MarkerTypes.CTM)
+                    showCategory(MarkerTypes.CTM)
                 }
                 btnCuriosita.setOnClickListener {
-                    disableCategory(MarkerTypes.CURIOSITY)
+                    showCategory(MarkerTypes.CURIOSITY)
                 }
                 btnParchi.setOnClickListener {
-                    disableCategory(MarkerTypes.PARKS)
+                    showCategory(MarkerTypes.PARKS)
                 }
                 btnEpoche.setOnClickListener {
-                    disableCategory(MarkerTypes.AGES)
+                    showCategory(MarkerTypes.AGES)
                 }
             }
 
             btnCategorySelect.setOnClickListener {
-                // TODO: Trovare l'id del layoutCategories ->(R.id.layoutCategories)
-                if(layoutCategories.visibility == View.VISIBLE){
-                    layoutCategories.visibility = View.GONE
-                }else {
-                    layoutCategories.visibility = View.VISIBLE
+                binding.run {
+                    categoryLayout.root.isVisible = !categoryLayout.root.isVisible
                 }
             }
         }
     }
 
-    private fun disableCategory(type: MarkerTypes){ // TODO: Refactor disableCategory Logic
+    private fun showCategory(type: MarkerTypes){ // TODO: Refactor disableCategory Logic
         when(type) {
             MarkerTypes.MONUMENTS -> {
+                val monumentsMap = markerManager.getPointByType(MarkerTypes.MONUMENTS)
                 if (monumentiEnabled) {
-                    for (marker in ListaMonumenti) {
-                        pointAnnotationManager?.delete(marker)
+                    monumentsMap.forEach {
+                        pointAnnotationManager?.delete(it.value)
                     }
                 } else {
-                    for (marker in ListaMonumenti) {
-                        val options = PointAnnotationOptions().withPoint(marker.point).withIconImage(bitmapFromDrawableRes(this@MainActivity, R.drawable.green_marker)!!)
+                    monumentsMap.forEach {
+                        val options = PointAnnotationOptions().withPoint(it.value.point).withIconImage(bitmapFromDrawableRes(this@MainActivity, R.drawable.green_marker)!!)
                         pointAnnotationManager?.create(options)
                     }
                 }
                 monumentiEnabled = !monumentiEnabled
             }
             MarkerTypes.CTM-> {
+                val ctmMap = markerManager.getPointByType(MarkerTypes.CTM)
                 if (ctmEnabled) {
-                    for (marker in ListaCTM) {
-                        pointAnnotationManager?.delete(marker)
+                    ctmMap.forEach {
+                        pointAnnotationManager?.delete(it.value)
                     }
                 } else {
-                    for (marker in ListaCTM) {
-                        val options = PointAnnotationOptions().withPoint(marker.point).withIconImage(bitmapFromDrawableRes(this@MainActivity, R.drawable.green_marker)!!)
+                    ctmMap.forEach {
+                        val options = PointAnnotationOptions().withPoint(it.value.point).withIconImage(bitmapFromDrawableRes(this@MainActivity, R.drawable.green_marker)!!)
                         pointAnnotationManager?.create(options)
                     }
                 }
                 ctmEnabled = !ctmEnabled
             }
             MarkerTypes.CURIOSITY-> {
+                val curiosityMap = markerManager.getPointByType(MarkerTypes.CURIOSITY)
                 if (curiositaEnabled) {
-                    for (marker in ListaCuriosita) {
-                        pointAnnotationManager?.delete(marker)
+                    curiosityMap.forEach {
+                        pointAnnotationManager?.delete(it.value)
                     }
                 } else {
-                    for (marker in ListaCuriosita) {
-                        val options = PointAnnotationOptions().withPoint(marker.point).withIconImage(bitmapFromDrawableRes(this@MainActivity, R.drawable.green_marker)!!)
+                    curiosityMap.forEach {
+                        val options = PointAnnotationOptions().withPoint(it.value.point).withIconImage(bitmapFromDrawableRes(this@MainActivity, R.drawable.green_marker)!!)
                         pointAnnotationManager?.create(options)
                     }
                 }
                 curiositaEnabled = !curiositaEnabled
             }
             MarkerTypes.PARKS-> {
+                val parksMap = markerManager.getPointByType(MarkerTypes.PARKS)
                 if (parchiEnabled) {
-                    for (marker in ListaParchi) {
-                        pointAnnotationManager?.delete(marker)
+                    parksMap.forEach {
+                        pointAnnotationManager?.delete(it.value)
                     }
                 } else {
-                    for (marker in ListaParchi) {
-                        val options = PointAnnotationOptions().withPoint(marker.point).withIconImage(bitmapFromDrawableRes(this@MainActivity, R.drawable.green_marker)!!)
+                    parksMap.forEach {
+                        val options = PointAnnotationOptions().withPoint(it.value.point).withIconImage(bitmapFromDrawableRes(this@MainActivity, R.drawable.green_marker)!!)
                         pointAnnotationManager?.create(options)
                     }
                 }
                 parchiEnabled = !parchiEnabled
             }
             MarkerTypes.AGES-> {
+                val agesMap = markerManager.getPointByType(MarkerTypes.AGES)
                 if (epocheEnabled) {
-                    for (marker in ListaEpoche) {
-                        pointAnnotationManager?.delete(marker)
+                    agesMap.forEach {
+                        pointAnnotationManager?.delete(it.value)
                     }
                 } else {
-                    for (marker in ListaEpoche) {
-                        val options = PointAnnotationOptions().withPoint(marker.point).withIconImage(bitmapFromDrawableRes(this@MainActivity, R.drawable.green_marker)!!)
+                    agesMap.forEach {
+                        val options = PointAnnotationOptions().withPoint(it.value.point).withIconImage(bitmapFromDrawableRes(this@MainActivity, R.drawable.green_marker)!!)
                         pointAnnotationManager?.create(options)
                     }
                 }
@@ -946,5 +921,9 @@ class MainActivity : AppCompatActivity() {
         }
 
         SearchResultCameraPosition()
+    }
+    companion object {
+        private const val LOCATION_UPDATE_INTERVAL: Long = 10000 // 10 seconds
+        private const val LOCATION_UPDATE_FASTEST_INTERVAL: Long = 5000 // 5 seconds
     }
 }
