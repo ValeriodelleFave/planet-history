@@ -18,6 +18,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.util.DisplayMetrics
+import android.util.Log
 import android.view.*
 import android.view.View.OnTouchListener
 import android.view.inputmethod.InputMethodManager
@@ -52,6 +53,7 @@ import com.mtcleo05.planethistory.databinding.ActivityMainBinding
 import kotlin.math.abs
 import kotlin.math.asin
 import kotlin.math.cos
+import kotlin.math.log
 import kotlin.math.log2
 import kotlin.math.sqrt
 
@@ -68,9 +70,6 @@ class MainActivity : AppCompatActivity() {
     private var currentLocationMarker: PointAnnotation? = null
     private val activeAnnotations: MutableMap<String, PointAnnotation> = mutableMapOf()
 
-    private lateinit var compactLayout: LinearLayout
-    private lateinit var includeLayout: LinearLayout
-    private lateinit var layoutCategories: LinearLayout
     private lateinit var coordinatorLayout: RelativeLayout
     private lateinit var detailLayout: RelativeLayout
     private lateinit var colorChangeBackground: GradientDrawable
@@ -87,16 +86,14 @@ class MainActivity : AppCompatActivity() {
     private lateinit var CurrentText: TextView
     private lateinit var CurrentButton: Button
 
-    private lateinit var CategorySelect: ImageButton
-
     private var AllMarkers: MutableList<PointAnnotation> = mutableListOf<PointAnnotation>()
     private var SearchResult: MutableList<PointAnnotation> = mutableListOf<PointAnnotation>()
 
-    private var monumentiEnabled: Boolean = true
-    private var ctmEnabled: Boolean = true
-    private var curiositaEnabled: Boolean = true
-    private var parchiEnabled: Boolean = true
-    private var epocheEnabled: Boolean = true
+    private var monumentiEnabled: Boolean = false
+    private var ctmEnabled: Boolean = false
+    private var curiositaEnabled: Boolean = false
+    private var parchiEnabled: Boolean = false
+    private var epocheEnabled: Boolean = false
 
 
     private lateinit var binding : ActivityMainBinding
@@ -238,9 +235,9 @@ class MainActivity : AppCompatActivity() {
         binding.searchBarEditText.run {
             doOnTextChanged{text, start, before, count ->
                 if(text.isNullOrEmpty()){
-                    for (marker in AllMarkers){
+                    for (marker in markerManager.getAllPointAnnotationInPointMap()) {
                         if(!(SearchResult.contains(marker))){
-                            reenableMarker(marker)
+                            addPointAnnotation(listOf(marker))
                         }
                     }
                     SearchResult.clear()
@@ -357,76 +354,54 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun addPointAnnotation(collection: Collection<PointAnnotation>) {
+        collection.forEach {
+            val options = PointAnnotationOptions().withPoint(it.point).withIconImage(bitmapFromDrawableRes(this@MainActivity, R.drawable.green_marker)!!)
+            pointAnnotationManager?.create(options)
+        }
+    }
+
+    private fun deletePointAnnotation(map: Map<MarkerTypes, PointAnnotation>) {
+        map.forEach {
+            pointAnnotationManager?.delete(it.value)
+        }
+    }
+
     private fun showCategory(type: MarkerTypes){ // TODO: Refactor disableCategory Logic
         when(type) {
             MarkerTypes.MONUMENTS -> {
-                val monumentsMap = markerManager.getPointByType(MarkerTypes.MONUMENTS)
-                if (monumentiEnabled) {
-                    monumentsMap.forEach {
-                        pointAnnotationManager?.delete(it.value)
-                    }
-                } else {
-                    monumentsMap.forEach {
-                        val options = PointAnnotationOptions().withPoint(it.value.point).withIconImage(bitmapFromDrawableRes(this@MainActivity, R.drawable.green_marker)!!)
-                        pointAnnotationManager?.create(options)
-                    }
-                }
+                if (monumentiEnabled)
+                    addPointAnnotation(markerManager.getPointByType(MarkerTypes.MONUMENTS).values)
+                else
+                    deletePointAnnotation(markerManager.getPointByType(MarkerTypes.MONUMENTS))
                 monumentiEnabled = !monumentiEnabled
             }
             MarkerTypes.CTM-> {
-                val ctmMap = markerManager.getPointByType(MarkerTypes.CTM)
-                if (ctmEnabled) {
-                    ctmMap.forEach {
-                        pointAnnotationManager?.delete(it.value)
-                    }
-                } else {
-                    ctmMap.forEach {
-                        val options = PointAnnotationOptions().withPoint(it.value.point).withIconImage(bitmapFromDrawableRes(this@MainActivity, R.drawable.green_marker)!!)
-                        pointAnnotationManager?.create(options)
-                    }
-                }
+                if (ctmEnabled)
+                    addPointAnnotation(markerManager.getPointByType(MarkerTypes.CTM).values)
+                else
+                    deletePointAnnotation(markerManager.getPointByType(MarkerTypes.CTM))
                 ctmEnabled = !ctmEnabled
             }
             MarkerTypes.CURIOSITY-> {
-                val curiosityMap = markerManager.getPointByType(MarkerTypes.CURIOSITY)
-                if (curiositaEnabled) {
-                    curiosityMap.forEach {
-                        pointAnnotationManager?.delete(it.value)
-                    }
-                } else {
-                    curiosityMap.forEach {
-                        val options = PointAnnotationOptions().withPoint(it.value.point).withIconImage(bitmapFromDrawableRes(this@MainActivity, R.drawable.green_marker)!!)
-                        pointAnnotationManager?.create(options)
-                    }
-                }
+                if (curiositaEnabled)
+                    addPointAnnotation(markerManager.getPointByType(MarkerTypes.CURIOSITY).values)
+                else
+                    deletePointAnnotation(markerManager.getPointByType(MarkerTypes.CURIOSITY))
                 curiositaEnabled = !curiositaEnabled
             }
             MarkerTypes.PARKS-> {
-                val parksMap = markerManager.getPointByType(MarkerTypes.PARKS)
-                if (parchiEnabled) {
-                    parksMap.forEach {
-                        pointAnnotationManager?.delete(it.value)
-                    }
-                } else {
-                    parksMap.forEach {
-                        val options = PointAnnotationOptions().withPoint(it.value.point).withIconImage(bitmapFromDrawableRes(this@MainActivity, R.drawable.green_marker)!!)
-                        pointAnnotationManager?.create(options)
-                    }
-                }
+                if (parchiEnabled)
+                    addPointAnnotation(markerManager.getPointByType(MarkerTypes.PARKS).values)
+                else
+                    deletePointAnnotation(markerManager.getPointByType(MarkerTypes.PARKS))
                 parchiEnabled = !parchiEnabled
             }
             MarkerTypes.AGES-> {
-                val agesMap = markerManager.getPointByType(MarkerTypes.AGES)
-                if (epocheEnabled) {
-                    agesMap.forEach {
-                        pointAnnotationManager?.delete(it.value)
-                    }
-                } else {
-                    agesMap.forEach {
-                        val options = PointAnnotationOptions().withPoint(it.value.point).withIconImage(bitmapFromDrawableRes(this@MainActivity, R.drawable.green_marker)!!)
-                        pointAnnotationManager?.create(options)
-                    }
-                }
+                if (epocheEnabled)
+                    addPointAnnotation(markerManager.getPointByType(MarkerTypes.AGES).values)
+                else
+                    deletePointAnnotation(markerManager.getPointByType(MarkerTypes.AGES))
                 epocheEnabled = !epocheEnabled
             }
             MarkerTypes.NOTYPE -> {
@@ -434,14 +409,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-
-
-    private fun reenableMarker(marker: PointAnnotation){
-        val options = PointAnnotationOptions().withPoint(marker.point).withIconImage(bitmapFromDrawableRes(this@MainActivity, R.drawable.green_marker)!!)
-        pointAnnotationManager?.create(options)
-    }
-
-
 
     private fun handleLocationResult(location: Location) {
         val zoomLevel = 15.0
@@ -584,7 +551,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateDetailViews(markerData: JsonElement?, color: Int) {
 
-        includeLayout = detailLayout.findViewById(R.id.compactLayout)
+        val includeLayout: LinearLayout = detailLayout.findViewById(R.id.compactLayout)
         imageContainer = detailLayout.findViewById(R.id.imageContainer)
 
         val name = markerData?.asJsonObject?.get("markerName").toString().removeSurrounding("\"")
