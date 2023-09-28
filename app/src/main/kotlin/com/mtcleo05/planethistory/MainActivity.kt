@@ -44,6 +44,7 @@ import com.mtcleo05.planethistory.core.ext.mapToMarkerUI
 import com.mtcleo05.planethistory.core.manager.ImageManager
 import com.mtcleo05.planethistory.core.manager.MarkerManager
 import com.mtcleo05.planethistory.core.model.MarkerTypes
+import com.mtcleo05.planethistory.core.model.MarkerUI
 import com.mtcleo05.planethistory.databinding.ActivityMainBinding
 import kotlin.math.abs
 import kotlin.math.asin
@@ -384,9 +385,7 @@ class MainActivity : AppCompatActivity() {
                     deletePointAnnotation(markerManager.getPointByType(MarkerTypes.AGES))
                 epocheEnabled = !epocheEnabled
             }
-            MarkerTypes.NOTYPE -> {
-                // TODO: Manage Notype case
-            }
+            MarkerTypes.NOTYPE -> { }
         }
     }
 
@@ -469,31 +468,27 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun onMarkerItemClick(marker: PointAnnotation) {
+        val markerUI = marker.getData()?.asJsonObject?.mapToMarkerUI()
 
-        val markerData = marker.getData()
-        if (markerData == null) {
+        if (markerUI == null) {
             Log.e("DEBUG", "Marker Data is null")
             return
         }
-        val type = markerData?.asJsonObject?.get("type").toString().toInt()
-        val color = when(type){
-            MarkerTypes.MONUMENTS.ordinal -> R.color.monuments_color
-            MarkerTypes.CTM.ordinal -> R.color.ctm_color
-            MarkerTypes.CURIOSITY.ordinal -> R.color.curiosity_color
-            MarkerTypes.PARKS.ordinal -> R.color.parks_color
-            MarkerTypes.AGES.ordinal -> R.color.ages_color
+
+        val color = when(markerUI.type){
+            MarkerTypes.MONUMENTS -> R.color.monuments_color
+            MarkerTypes.CTM -> R.color.ctm_color
+            MarkerTypes.CURIOSITY -> R.color.curiosity_color
+            MarkerTypes.PARKS -> R.color.parks_color
+            MarkerTypes.AGES -> R.color.ages_color
             else -> R.color.other_color
         }
 
         binding.coordinatorLayout.root.isVisible = !binding.coordinatorLayout.root.isVisible
-        updateDetailViews(markerData,color)
-
+        updateDetailViews(markerUI,color)
     }
 
-    private fun updateDetailViews(markerData: JsonElement?, color: Int) {
-
-        val markerUI = markerData?.asJsonObject?.mapToMarkerUI()
-
+    private fun updateDetailViews(markerUI: MarkerUI, color: Int) {
         binding.run {
             coordinatorLayout.run {
                 (root.background as GradientDrawable).setColor(color)
@@ -501,7 +496,6 @@ class MainActivity : AppCompatActivity() {
                 (buttonWeb.background as GradientDrawable).setColor(color)
                 (buttonCall.background as GradientDrawable).setColor(color)
                 (buttonTravel.background as GradientDrawable).setColor(color)
-
                 nameTextview.text = markerUI?.markerName
             }
         }
@@ -514,39 +508,29 @@ class MainActivity : AppCompatActivity() {
                     (buttonWeb.background as GradientDrawable).setColor(color)
                     (buttonCall.background as GradientDrawable).setColor(color)
                     (buttonTravel.background as GradientDrawable).setColor(color)
-
-                    nameTextview.text = markerUI?.markerName
+                    nameTextview.text = markerUI.markerName
                 }
 
-                detailDescription.text = markerUI?.description
-                detailTags.text = markerUI?.tags?.joinToString(", ")
-                detailMainTag.text = markerUI?.type?.name
+                detailDescription.text = markerUI.description
+                detailTags.text = markerUI.tags?.joinToString(", ")
+                detailMainTag.text = markerUI.type?.name
 
-
-                markerUI?.images?.let {
+                markerUI.images.let {
                     for(i in it.indices){
                         val imageView = ImageView(applicationContext)
-
                         DownloadImageTask(imageView).execute(it[i])
-
-                        imageContainer.addView(imageView)
-
+                        imageView.layoutParams.height = 500
+                        imageView.layoutParams.width = 500
+                        imageView.setPadding(10, 0, 10, 0)
                         imageView.setOnClickListener {
                             imageLayout.visibility = View.VISIBLE
                             DownloadImageTask(imageFullScreen.imageFullScreen).execute(markerUI.images[i])
                         }
-
-                        imageView.layoutParams.height = 500
-                        imageView.layoutParams.width = 500
-                        imageView.setPadding(10, 0, 10, 0)
+                        imageContainer.addView(imageView)
                     }
                 }
-
             }
         }
-
-
-
     }
     private fun centerMapOnUserPosition(zoom: Double = 13.0) {
         binding.mapView.run {
