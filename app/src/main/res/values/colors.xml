@@ -7,4 +7,12 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    //Marker Colors
+    <color name="monuments_color">#0000FF</color>
+    <color name="ctm_color">#FF0000</color>
+    <color name="curiosity_color">#FFFF00</color>
+    <color name="parks_color">#00FF00</color>
+    <color name="ages_color">#FF00FF</color>
+    <color name="other_color">#6e6e6e</color>
 </resources>

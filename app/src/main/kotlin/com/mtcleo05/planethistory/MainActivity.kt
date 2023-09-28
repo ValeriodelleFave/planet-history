@@ -47,6 +47,7 @@ import com.mapbox.maps.plugin.compass.compass
 import com.mapbox.maps.plugin.logo.logo
 import com.mapbox.maps.plugin.scalebar.scalebar
 import com.mtcleo05.planethistory.core.ext.mapToJsonObject
+import com.mtcleo05.planethistory.core.ext.mapToMarkerUI
 import com.mtcleo05.planethistory.core.manager.MarkerManager
 import com.mtcleo05.planethistory.core.model.MarkerTypes
 import com.mtcleo05.planethistory.databinding.ActivityMainBinding
@@ -308,7 +309,7 @@ class MainActivity : AppCompatActivity() {
             pointAnnotationManager = annotations.createPointAnnotationManager()
             pointAnnotationManager?.addClickListener(OnPointAnnotationClickListener {
                     annotation:PointAnnotation ->
-//                onMarkerItemClick(annotation)
+                onMarkerItemClick(annotation)
                 true
             })
             addMarkerToMap()
@@ -422,12 +423,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (isFirstLocationUpdate) {
-            mapView?.getMapboxMap()?.setCamera(
-                com.mapbox.maps.CameraOptions.Builder()
-                    .center(Point.fromLngLat(longitude, latitude))
-                    .zoom(zoomLevel)
-                    .build()
-            )
+            centerMapOnUserPosition(zoom = zoomLevel)
             isFirstLocationUpdate = false
         }
     }
@@ -513,179 +509,94 @@ class MainActivity : AppCompatActivity() {
 
     private fun onMarkerItemClick(marker: PointAnnotation) {
 
-        binding.coordinatorLayout.root.isVisible = coordinatorLayout.visibility != View.VISIBLE
-
         val markerData = marker.getData()
         val type = markerData?.asJsonObject?.get("type").toString().toInt()
-
-        when(type){
-            MarkerTypes.MONUMENTS.ordinal -> onMarkerClick(marker,MarkerTypes.MONUMENTS)
-            MarkerTypes.CTM.ordinal -> onMarkerClick(marker,MarkerTypes.CTM)
-            MarkerTypes.CURIOSITY.ordinal -> onMarkerClick(marker,MarkerTypes.CURIOSITY)
-            MarkerTypes.PARKS.ordinal -> onMarkerClick(marker,MarkerTypes.PARKS)
-            MarkerTypes.AGES.ordinal -> onMarkerClick(marker,MarkerTypes.AGES)
-            else -> onMiscClick(marker)
+        val color = when(type){
+            MarkerTypes.MONUMENTS.ordinal -> R.color.monuments_color
+            MarkerTypes.CTM.ordinal -> R.color.ctm_color
+            MarkerTypes.CURIOSITY.ordinal -> R.color.curiosity_color
+            MarkerTypes.PARKS.ordinal -> R.color.parks_color
+            MarkerTypes.AGES.ordinal -> R.color.ages_color
+            else -> R.color.other_color
         }
 
-    }
+        binding.coordinatorLayout.root.isVisible = !binding.coordinatorLayout.root.isVisible
+        updateDetailViews(markerData,color)
 
-    private fun onMarkerClick(marker: PointAnnotation, type: MarkerTypes){
-        // TODO: Refactor onMarkerClick Logic
-        when(type) {
-            MarkerTypes.MONUMENTS -> {
-                if (coordinatorLayout.visibility != View.VISIBLE) {
-                    coordinatorLayout.visibility = View.VISIBLE
-                }
-
-                val markerData = marker.getData()
-
-                updateDetailViews(markerData, Color.parseColor("#0000FF"))
-            }
-            MarkerTypes.CTM-> {
-                if (coordinatorLayout.visibility != View.VISIBLE) {
-                    coordinatorLayout.visibility = View.VISIBLE
-                }
-
-                val markerData = marker.getData()
-                updateDetailViews(markerData,Color.parseColor("#FF0000"))
-            }
-            MarkerTypes.CURIOSITY-> {
-                if (coordinatorLayout.visibility != View.VISIBLE) {
-                    coordinatorLayout.visibility = View.VISIBLE
-                }
-
-                val markerData = marker.getData()
-                updateDetailViews(markerData, Color.parseColor("#FFFF00"))
-            }
-            MarkerTypes.PARKS-> {
-                if (coordinatorLayout.visibility != View.VISIBLE) {
-                    coordinatorLayout.visibility = View.VISIBLE
-                }
-
-                val markerData = marker.getData()
-                updateDetailViews(markerData, Color.parseColor("#00FF00"))
-            }
-            MarkerTypes.AGES-> {
-                if (coordinatorLayout.visibility != View.VISIBLE) {
-                    coordinatorLayout.visibility = View.VISIBLE
-                }
-
-                val markerData = marker.getData()
-                updateDetailViews(markerData, Color.parseColor("#FF00FF"))
-            }
-            MarkerTypes.NOTYPE -> {
-                // TODO: Manage Notype case
-            }
-        }
-    }
-
-
-    private fun onMiscClick(marker: PointAnnotation) {
-        if (coordinatorLayout.visibility != View.VISIBLE) {
-            coordinatorLayout.visibility = View.VISIBLE
-        }
-
-        val markerData = marker.getData()
-        updateDetailViews(markerData, Color.parseColor("#6e6e6e"))
     }
 
     private fun updateDetailViews(markerData: JsonElement?, color: Int) {
 
-        val includeLayout: LinearLayout = detailLayout.findViewById(R.id.compactLayout)
-        imageContainer = detailLayout.findViewById(R.id.imageContainer)
+        val markerUI = markerData?.asJsonObject?.mapToMarkerUI()
 
-        val name = markerData?.asJsonObject?.get("markerName").toString().removeSurrounding("\"")
-        val description = markerData?.asJsonObject?.get("description").toString().removeSurrounding("\"")
-        val tagsString = markerData?.asJsonObject?.get("tags")?.asString
-        val imageString = markerData?.asJsonObject?.get("images")?.asString
-        val imageArray = imageString?.split(", ")
-        val tags = tagsString?.split(", ")?.joinToString(", ")
-        val mainTag = markerData?.asJsonObject?.get("mainTag").toString().removeSurrounding("\"")
+        binding.run {
+            coordinatorLayout.run {
+                (root.background as GradientDrawable).setColor(color)
+                (buttonOther.background as GradientDrawable).setColor(color)
+                (buttonWeb.background as GradientDrawable).setColor(color)
+                (buttonCall.background as GradientDrawable).setColor(color)
+                (buttonTravel.background as GradientDrawable).setColor(color)
 
-        colorChangeBackground = coordinatorLayout.background as GradientDrawable
-        colorChangeBackground.setColor(color)
-
-        CurrentButton = coordinatorLayout.findViewById(R.id.buttonOther)
-        colorChangeBackground = CurrentButton.background as GradientDrawable
-        colorChangeBackground.setColor(color)
-        CurrentButton = coordinatorLayout.findViewById(R.id.buttonWeb)
-        colorChangeBackground = CurrentButton.background as GradientDrawable
-        colorChangeBackground.setColor(color)
-        CurrentButton = coordinatorLayout.findViewById(R.id.buttonTravel)
-        colorChangeBackground = CurrentButton.background as GradientDrawable
-        colorChangeBackground.setColor(color)
-        CurrentButton = coordinatorLayout.findViewById(R.id.buttonCall)
-        colorChangeBackground = CurrentButton.background as GradientDrawable
-        colorChangeBackground.setColor(color)
-
-        val something: RelativeLayout = detailLayout.findViewById(R.id.coordinatorLayout)
-
-        colorChangeBackground = something.background as GradientDrawable
-        colorChangeBackground.setColor(color)
-
-        CurrentButton = includeLayout.findViewById(R.id.buttonOther)
-        colorChangeBackground = CurrentButton.background as GradientDrawable
-        colorChangeBackground.setColor(color)
-        CurrentButton = includeLayout.findViewById(R.id.buttonWeb)
-        colorChangeBackground = CurrentButton.background as GradientDrawable
-        colorChangeBackground.setColor(color)
-        CurrentButton = includeLayout.findViewById(R.id.buttonTravel)
-        colorChangeBackground = CurrentButton.background as GradientDrawable
-        colorChangeBackground.setColor(color)
-        CurrentButton = includeLayout.findViewById(R.id.buttonCall)
-        colorChangeBackground = CurrentButton.background as GradientDrawable
-        colorChangeBackground.setColor(color)
-
-        CurrentText = coordinatorLayout.findViewById(R.id.NameText)
-        CurrentText.text = name
-
-        CurrentText = includeLayout.findViewById(R.id.NameText)
-        CurrentText.text = name
-
-
-        for(i in 0 until imageArray!!.size){
-            val imageView = ImageView(this, )
-
-            DownloadImageTask(imageView).execute(imageArray[i])
-
-            val fullScreenImag: ImageView = findViewById(R.id.imageFullScreen)
-
-            imageContainer.addView(imageView)
-
-            imageView.setOnClickListener {
-                imageLayout.visibility = View.VISIBLE
-                DownloadImageTask(fullScreenImag).execute(imageArray[i])
+                nameTextview.text = markerUI?.markerName
             }
+        }
 
-            imageView.layoutParams.height = 500
-            imageView.layoutParams.width = 500
-            imageView.setPadding(10, 0, 10, 0)
+        binding.run {
+            with(detailLayout){
+                coordinatorLayout.run {
+                    (root.background as GradientDrawable).setColor(color)
+                    (buttonOther.background as GradientDrawable).setColor(color)
+                    (buttonWeb.background as GradientDrawable).setColor(color)
+                    (buttonCall.background as GradientDrawable).setColor(color)
+                    (buttonTravel.background as GradientDrawable).setColor(color)
+
+                    nameTextview.text = markerUI?.markerName
+                }
+
+                detailDescription.text = markerUI?.description
+                detailTags.text = markerUI?.tags?.joinToString(", ")
+                detailMainTag.text = markerUI?.type?.name
+
+
+                markerUI?.images?.let {
+                    for(i in it.indices){
+                        val imageView = ImageView(applicationContext)
+
+                        DownloadImageTask(imageView).execute(it[i])
+
+                        imageContainer.addView(imageView)
+
+                        imageView.setOnClickListener {
+                            imageLayout.visibility = View.VISIBLE
+                            DownloadImageTask(imageFullScreen.imageFullScreen).execute(markerUI.images[i])
+                        }
+
+                        imageView.layoutParams.height = 500
+                        imageView.layoutParams.width = 500
+                        imageView.setPadding(10, 0, 10, 0)
+                    }
+                }
+
+            }
         }
 
 
-        CurrentText = detailLayout.findViewById(R.id.detailDescription)
-        CurrentText.text = description
-        CurrentText = detailLayout.findViewById(R.id.detailTags)
-        CurrentText.text = tags
-        CurrentText = detailLayout.findViewById(R.id.detailMainTag)
-        CurrentText.text = mainTag
 
     }
-
-
-
-
-
-
-    // TODO: Review Localization Logic
-    private fun centerMapOnUserPosition() {
-        mapView?.getMapboxMap()?.setCamera(
-            com.mapbox.maps.CameraOptions.Builder()
-                .center(Point.fromLngLat(longitude, latitude))
-                .zoom(13.0)
-                .build()
-        )
+    private fun centerMapOnUserPosition(zoom: Double = 13.0) {
+        binding.mapView.run {
+            getMapboxMap().setCamera(
+                com.mapbox.maps.CameraOptions.Builder()
+                    .center(Point.fromLngLat(longitude,latitude))
+                    .zoom(zoom)
+                    .build()
+            )
+        }
     }
+
+    /**
+     * Localization
+     */
 
     private fun hasLocationPermission(): Boolean {
         return ContextCompat.checkSelfPermission(
@@ -708,12 +619,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun showLocationServiceDisabledDialog() {
         AlertDialog.Builder(this)
-            .setTitle("Location Service Disabled")
-            .setMessage("This app requires the location service to be enabled. Please enable the location service to proceed.")
-            .setPositiveButton("Enable") { _, _ ->
+            .setTitle(resources.getString(R.string.alert_title))
+            .setMessage(resources.getString(R.string.alert_message))
+            .setPositiveButton(resources.getString(R.string.alert_positive_button_label)) { _, _ ->
                 openLocationSettings()
             }
-            .setNegativeButton("Cancel") { _, _ ->
+            .setNegativeButton(resources.getString(R.string.alert_negative_button_label)) { _, _ ->
                 finish()
             }
             .setCancelable(false)
@@ -733,22 +644,16 @@ class MainActivity : AppCompatActivity() {
 
     private fun showLocationPermissionDeniedDialog() {
         MaterialAlertDialogBuilder(this)
-            .setTitle("Location Permission Required")
-            .setMessage("This app requires access to your device's location. Please grant the location permission in the app settings.")
-            .setPositiveButton("App Settings") { _, _ ->
+            .setTitle(resources.getString(R.string.alert_location_title))
+            .setMessage(resources.getString(R.string.alert_location_message))
+            .setPositiveButton(resources.getString(R.string.alert_location_positive_button_label)) { _, _ ->
                 openAppSettings()
             }
-            .setNegativeButton("Close App") { _, _ ->
+            .setNegativeButton(resources.getString(R.string.alert_location_negative_button_label)) { _, _ ->
                 finish()
             }
             .setCancelable(false)
             .show()
-    }
-
-    private fun openAppSettings() {
-        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-        intent.data = Uri.fromParts("package", packageName, null)
-        startActivity(intent)
     }
 
     private fun startLocationUpdates() {
@@ -771,14 +676,17 @@ class MainActivity : AppCompatActivity() {
         fusedLocationClient.removeLocationUpdates(locationCallback)
     }
 
+    private fun openAppSettings() {
+        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+        intent.data = Uri.fromParts("package", packageName, null)
+        startActivity(intent)
+    }
 
 
+    /**
+     * Search
+     */
 
-
-
-
-
-    // TODO: Refactor Search Logic
     private fun search(){
         val searchText = searchBarEditText.text.toString()
         globalSearch(searchText)

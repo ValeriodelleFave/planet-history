@@ -1,5 +1,7 @@
 package com.mtcleo05.planethistory.core.model
 
+import com.mtcleo05.planethistory.core.ext.getMarkerType
+
 data class Marker (
     val description: String,
     val tags: List<String>,
@@ -13,7 +15,7 @@ data class Marker (
 
 fun Marker.mapToUI() : MarkerUI{
     return MarkerUI(
-        getMarkerTypes(mainTag) ,
+        mainTag.getMarkerType() ,
         tags,
         description,
         markerName,
@@ -22,18 +24,6 @@ fun Marker.mapToUI() : MarkerUI{
         id,
         images
     )
-}
-
-private fun getMarkerTypes(type : String) : MarkerTypes {
-    return when(type){
-        MONUMENTS_LABEL -> MarkerTypes.MONUMENTS
-        CTM_LABEL -> MarkerTypes.CTM
-        CURIOSITY1_LABEL,
-        CURIOSITY2_LABEL -> MarkerTypes.CURIOSITY
-        PARKS_LABEL -> MarkerTypes.PARKS
-        AGES_LABEL -> MarkerTypes.AGES
-        else -> MarkerTypes.NOTYPE
-    }
 }
 
 data class MarkerUI (
@@ -55,10 +45,3 @@ enum class MarkerTypes{
     AGES,
     NOTYPE
 }
-
-private const val MONUMENTS_LABEL = "Monumenti"
-private const val CTM_LABEL = "CTM"
-private const val CURIOSITY1_LABEL = "Curiosità"
-private const val CURIOSITY2_LABEL = "Curiosita"
-private const val PARKS_LABEL = "Parchi"
-private const val AGES_LABEL = "Epoche"

@@ -8,4 +8,16 @@
     <string name="curiosity_label">Curiosità</string>
     <string name="parks_label">Parchi</string>
     <string name="ages_label">Epoche</string>
+
+    //Alert
+    <string name="alert_title">Location Service Disabled</string>
+    <string name="alert_message">This app requires the location service to be enabled. Please enable the location service to proceed.</string>
+    <string name="alert_positive_button_label">Enable</string>
+    <string name="alert_negative_button_label">Cancel</string>
+
+    //Alert Location
+    <string name="alert_location_title">Location Permission Required</string>
+    <string name="alert_location_message">This app requires access to your device\'s location. Please grant the location permission in the app settings.</string>
+    <string name="alert_location_positive_button_label">App Settings</string>
+    <string name="alert_location_negative_button_label">Close App</string>
 </resources>
