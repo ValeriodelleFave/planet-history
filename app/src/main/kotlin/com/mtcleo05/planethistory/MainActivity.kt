@@ -510,6 +510,10 @@ class MainActivity : AppCompatActivity() {
     private fun onMarkerItemClick(marker: PointAnnotation) {
 
         val markerData = marker.getData()
+        if (markerData == null) {
+            Log.e("DEBUG", "Marker Data is null")
+            return
+        }
         val type = markerData?.asJsonObject?.get("type").toString().toInt()
         val color = when(type){
             MarkerTypes.MONUMENTS.ordinal -> R.color.monuments_color
