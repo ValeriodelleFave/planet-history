@@ -34,7 +34,7 @@ fun JSONObject.getMarker() : Marker {
 
 fun JsonObject.mapToMarkerUI() : MarkerUI{
     return MarkerUI(
-        type = get("mainTag").asString.getMarkerType(),
+        type = get("type").asString.getMarkerType(),
         tags = get("tags").asString.split(", "),
         description = get("description").asString.removeSurrounding("\""),
         markerName = get("markerName").asString.removeSurrounding("\""),
