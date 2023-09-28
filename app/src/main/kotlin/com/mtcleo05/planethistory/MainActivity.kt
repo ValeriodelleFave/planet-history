@@ -5,11 +5,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.drawable.BitmapDrawable
-import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.location.Location
 import android.location.LocationManager
@@ -23,10 +18,8 @@ import android.view.*
 import android.view.View.OnTouchListener
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
-import androidx.annotation.DrawableRes
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.content.res.AppCompatResources
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -48,13 +41,13 @@ import com.mapbox.maps.plugin.logo.logo
 import com.mapbox.maps.plugin.scalebar.scalebar
 import com.mtcleo05.planethistory.core.ext.mapToJsonObject
 import com.mtcleo05.planethistory.core.ext.mapToMarkerUI
+import com.mtcleo05.planethistory.core.manager.ImageManager
 import com.mtcleo05.planethistory.core.manager.MarkerManager
 import com.mtcleo05.planethistory.core.model.MarkerTypes
 import com.mtcleo05.planethistory.databinding.ActivityMainBinding
 import kotlin.math.abs
 import kotlin.math.asin
 import kotlin.math.cos
-import kotlin.math.log
 import kotlin.math.log2
 import kotlin.math.sqrt
 
@@ -76,14 +69,9 @@ class MainActivity : AppCompatActivity() {
     private var parchiEnabled: Boolean = false
     private var epocheEnabled: Boolean = false
     private var markerManager = MarkerManager()
+    private var imageManager = ImageManager()
 
-    private lateinit var coordinatorLayout: RelativeLayout
-    private lateinit var detailLayout: RelativeLayout
-    private lateinit var colorChangeBackground: GradientDrawable
-    private lateinit var imageContainer: LinearLayout
     private lateinit var imageLayout: CoordinatorLayout
-    private lateinit var CurrentText: TextView
-    private lateinit var CurrentButton: Button
     private lateinit var locationRequest: LocationRequest
     private lateinit var locationCallback: LocationCallback
     private lateinit var searchBarEditText: EditText
@@ -346,7 +334,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun addPointAnnotation(collection: Collection<PointAnnotation>) {
         collection.forEach {
-            val options = PointAnnotationOptions().withPoint(it.point).withIconImage(bitmapFromDrawableRes(this@MainActivity, R.drawable.green_marker)!!)
+            val options = PointAnnotationOptions()
+                .withPoint(it.point)
+                .withIconImage(imageManager.bitmapFromDrawableRes(this@MainActivity, R.drawable.green_marker)!!)
             pointAnnotationManager?.create(options)
         }
     }
@@ -434,7 +424,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun addPositionToMap(lat: Double, lng: Double): PointAnnotation? {
-        bitmapFromDrawableRes(
+        imageManager.bitmapFromDrawableRes(
             this@MainActivity,
             R.drawable.red_marker
         )?.let { markerIcon ->
@@ -460,7 +450,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun addMarkerToMap(){
         markerManager.markersList.forEach { marker ->
-            bitmapFromDrawableRes(
+            imageManager.bitmapFromDrawableRes(
                 this,
                 R.drawable.green_marker
             )?.let { icon ->
@@ -477,35 +467,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-
-
-    private fun bitmapFromDrawableRes(context: Context, @DrawableRes resId: Int): Bitmap? {
-        val drawable: Drawable? = AppCompatResources.getDrawable(context, resId)
-        if (drawable is BitmapDrawable) {
-            return drawable.bitmap
-        }
-
-        val bitmap: Bitmap? = if ((drawable?.intrinsicWidth ?: 0) > 0 && (drawable?.intrinsicHeight
-                ?: 0) > 0
-        ) {
-            Bitmap.createBitmap(
-                drawable?.intrinsicWidth ?: 0,
-                drawable?.intrinsicHeight ?: 0,
-                Bitmap.Config.ARGB_8888
-            )
-        } else {
-            null
-        }
-
-        if (bitmap != null) {
-            val canvas = Canvas(bitmap)
-            drawable?.setBounds(0, 0, canvas.width, canvas.height)
-            drawable?.draw(canvas)
-        }
-
-        return bitmap
-    }
-
 
     private fun onMarkerItemClick(marker: PointAnnotation) {
 
