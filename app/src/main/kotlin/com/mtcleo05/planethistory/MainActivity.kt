@@ -72,7 +72,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var locationCallback: LocationCallback
     private lateinit var binding : ActivityMainBinding
 
-    // Override Methods
     override fun onStart() {
         super.onStart()
         if (!hasLocationPermission()) {
@@ -290,8 +289,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-
-    // Private Methods
 
     @SuppressLint("ClickableViewAccessibility") //Caused by OnTouchListener for Custom motion layout see documentation for MotionLayout class
     private fun setupMap(){
