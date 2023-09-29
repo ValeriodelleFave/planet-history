@@ -74,13 +74,14 @@
         android:layout_height="48dp"
         android:layout_gravity="bottom|end"
         android:layout_marginEnd="16dp"
-        android:layout_marginBottom="136dp"
+        android:layout_marginBottom="32dp"
         android:background="@drawable/center_map_button"
         android:contentDescription="Center Map on Position"
         android:src="@drawable/ic_location" />
 
     <include
         android:id="@+id/coordinatorLayout"
+        android:visibility="gone"
         layout="@layout/compat_layout" />
 
     <include
