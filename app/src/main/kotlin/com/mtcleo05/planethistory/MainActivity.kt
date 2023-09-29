@@ -46,6 +46,7 @@ import com.mtcleo05.planethistory.core.manager.MarkerManager
 import com.mtcleo05.planethistory.core.model.MarkerTypes
 import com.mtcleo05.planethistory.core.model.MarkerUI
 import com.mtcleo05.planethistory.databinding.ActivityMainBinding
+import java.io.IOException
 import kotlin.math.abs
 import kotlin.math.asin
 import kotlin.math.cos
@@ -467,24 +468,28 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun onMarkerItemClick(marker: PointAnnotation) {
-        val markerUI = marker.getData()?.asJsonObject?.mapToMarkerUI()
+        try {
+            val markerUI = marker.getData()?.asJsonObject?.mapToMarkerUI()
 
-        if (markerUI == null) {
-            Log.e("DEBUG", "Marker Data is null")
-            return
+            if (markerUI == null) {
+                Log.e("DEBUG", "Marker Data is null")
+                return
+            }
+
+            val color = when(markerUI.type){
+                MarkerTypes.MONUMENTS -> R.color.monuments_color
+                MarkerTypes.CTM -> R.color.ctm_color
+                MarkerTypes.CURIOSITY -> R.color.curiosity_color
+                MarkerTypes.PARKS -> R.color.parks_color
+                MarkerTypes.AGES -> R.color.ages_color
+                else -> R.color.other_color
+            }
+
+            binding.coordinatorLayout.root.isVisible = !binding.coordinatorLayout.root.isVisible
+            updateDetailViews(markerUI,color)
+        }catch (e: Exception) {
+            Log.e("ERROR", "Error during on marker click -> ${e.message}")
         }
-
-        val color = when(markerUI.type){
-            MarkerTypes.MONUMENTS -> R.color.monuments_color
-            MarkerTypes.CTM -> R.color.ctm_color
-            MarkerTypes.CURIOSITY -> R.color.curiosity_color
-            MarkerTypes.PARKS -> R.color.parks_color
-            MarkerTypes.AGES -> R.color.ages_color
-            else -> R.color.other_color
-        }
-
-        binding.coordinatorLayout.root.isVisible = !binding.coordinatorLayout.root.isVisible
-        updateDetailViews(markerUI,color)
     }
 
     private fun updateDetailViews(markerUI: MarkerUI, color: Int) {
