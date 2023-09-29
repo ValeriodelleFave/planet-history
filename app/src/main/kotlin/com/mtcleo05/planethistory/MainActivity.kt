@@ -40,6 +40,7 @@ import com.mapbox.maps.plugin.attribution.attribution
 import com.mapbox.maps.plugin.compass.compass
 import com.mapbox.maps.plugin.logo.logo
 import com.mapbox.maps.plugin.scalebar.scalebar
+import com.mtcleo05.planethistory.core.ext.getMarkerType
 import com.mtcleo05.planethistory.core.ext.loadImage
 import com.mtcleo05.planethistory.core.ext.mapToJsonObject
 import com.mtcleo05.planethistory.core.ext.mapToMarkerUI
@@ -212,21 +213,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun setSearchBarEditText() {
-        binding.searchBarEditText.run {
-            doOnTextChanged{text, start, before, count ->
-                if(text.isNullOrEmpty()){
-                    for (marker in markerManager.getAllPointAnnotationInPointMap()) {
-                        if(!(SearchResult.contains(marker))){
-                            addPointAnnotation(listOf(marker))
-                        }
-                    }
-                    SearchResult.clear()
-                }
-            }
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -235,7 +221,7 @@ class MainActivity : AppCompatActivity() {
         val markersRaw = applicationContext.resources.openRawResource(R.raw.markers)
         markerManager.loadMarkerList(markersRaw)
 
-        setupOnClickListener()
+        setupCategoryButtonsOnClickListener()
         setupMap()
 
         val displayMetrics = getDisplayMetrics()
@@ -257,6 +243,46 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun setSearchBarEditText() {
+        binding.searchView.run {
+            setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+                override fun onQueryTextSubmit(query: String?): Boolean {
+                    if (!query.isNullOrBlank()) {
+                        (getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).hideSoftInputFromWindow(binding.searchView.windowToken, 0)
+
+                        //TODO: Refactor logic
+                        for (markerElement in markerManager.getAllPointAnnotationInPointMap()) {
+                            markerElement.getData()?.asJsonObject?.mapToMarkerUI()?.let {markerUI ->
+                                if (markerUI.markerName == query.lowercase()) {
+                                    if (!SearchResult.contains(markerElement))
+                                        SearchResult.add(markerElement)
+                                }
+                                if (markerUI.type == query.getMarkerType()) {
+                                    if (!SearchResult.contains(markerElement))
+                                        SearchResult.add(markerElement)
+                                }
+                            }
+                        }
+
+                        for (deleteMarker in markerManager.getAllPointAnnotationInPointMap()){
+                            if(!(SearchResult.contains(deleteMarker))){
+                                deletePositionMarker(deleteMarker)
+                            }
+                        }
+
+                        SearchResultCameraPosition()
+                    }
+                    return true
+                }
+
+                override fun onQueryTextChange(newText: String?): Boolean {
+                    if (!newText.isNullOrBlank()) { }
+                    return true
+                }
+            })
+        }
+    }
+
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -274,20 +300,6 @@ class MainActivity : AppCompatActivity() {
 
     // Private Methods
 
-    private fun setupOnClickListener(){
-        setupCategoryButtonsOnClickListener()
-        setupSearchButtonOnClickListener()
-    }
-
-    private fun setupSearchButtonOnClickListener() {
-        binding.run {
-            searchButton.setOnClickListener {
-                val inputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-                inputMethodManager.hideSoftInputFromWindow(searchButton.windowToken, 0)
-                search()
-            }
-        }
-    }
     @SuppressLint("ClickableViewAccessibility") //Caused by OnTouchListener for Custom motion layout see documentation for MotionLayout class
     private fun setupMap(){
         binding.mapView.run {
@@ -658,31 +670,7 @@ class MainActivity : AppCompatActivity() {
      * Search
      */
 
-    private fun search(){
-        val searchText = searchBarEditText.text.toString()
-        globalSearch(searchText)
-    }
 
-    private fun searchName(prompt: String, markerElement: PointAnnotation){
-        val markerData = markerElement.getData()
-        val markerName = markerData?.asJsonObject?.get("markerName").toString().removeSurrounding("\"")
-
-        if(markerName.lowercase().contains(prompt.lowercase())){
-            if(!(SearchResult.contains(markerElement))){
-                SearchResult.add(markerElement)
-            }
-        }
-    }
-    private fun searchTag(prompt: String, markerElement: PointAnnotation){
-        val markerData = markerElement.getData()
-        val markerMainTag = markerData?.asJsonObject?.get("mainTag").toString().removeSurrounding("\"")
-
-        if(markerMainTag.lowercase().contains(prompt.lowercase())){
-            if(!(SearchResult.contains(markerElement))) {
-                SearchResult.add(markerElement)
-            }
-        }
-    }
 
     private fun SearchResultCameraPosition() {
         var maxLatitude = Double.MIN_VALUE
@@ -725,12 +713,7 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    private fun calculateDistance(
-        lat1: Double,
-        lon1: Double,
-        lat2: Double,
-        lon2: Double
-    ): Double {
+    private fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
         val p = Math.PI / 180
         val a = 0.5 - cos((lat2 - lat1) * p) / 2 +
                 cos(lat1 * p) * cos(lat2 * p) *
@@ -745,20 +728,6 @@ class MainActivity : AppCompatActivity() {
         return zoomLevel.coerceAtMost(maxZoom)
     }
 
-    private fun globalSearch(prompt: String) {
-        for (markerElement in markerManager.getAllPointAnnotationInPointMap()) {
-            searchName(prompt, markerElement)
-            searchTag(prompt, markerElement)
-        }
-
-        for (deleteMarker in markerManager.getAllPointAnnotationInPointMap()){
-            if(!(SearchResult.contains(deleteMarker))){
-                deletePositionMarker(deleteMarker)
-            }
-        }
-
-        SearchResultCameraPosition()
-    }
     companion object {
         private const val LOCATION_UPDATE_INTERVAL: Long = 10000 // 10 seconds
         private const val LOCATION_UPDATE_FASTEST_INTERVAL: Long = 5000 // 5 seconds

@@ -29,26 +29,16 @@
         android:background="@drawable/search_bar"
         android:orientation="horizontal">
 
-        <ImageButton
-            android:id="@+id/searchButton"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="@android:color/transparent"
-            android:contentDescription="Search"
-            android:src="@drawable/ic_search" />
-
-        <EditText
-            android:id="@+id/searchBarEditText"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_weight="5"
-            android:background="@android:color/transparent"
-            android:hint="Enter your search query" />
+        <SearchView
+            android:id="@+id/searchView"
+            android:layout_width="320dp"
+            android:layout_height="50dp"
+            android:queryHint="@string/search_view_placeholder" />
 
         <ImageButton
             android:id="@+id/btnCategorySelect"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
+            android:layout_width="35dp"
+            android:layout_height="35dp"
             android:layout_gravity="center_vertical"
             android:background="@drawable/ic_marker_select"
             android:contentDescription="Center Map on Position"

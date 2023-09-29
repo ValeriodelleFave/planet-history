@@ -20,4 +20,7 @@
     <string name="alert_location_message">This app requires access to your device\'s location. Please grant the location permission in the app settings.</string>
     <string name="alert_location_positive_button_label">App Settings</string>
     <string name="alert_location_negative_button_label">Close App</string>
+
+    // SearchView
+    <string name="search_view_placeholder">Search View Placeholder</string>
 </resources>
