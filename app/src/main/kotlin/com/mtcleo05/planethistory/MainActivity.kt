@@ -29,14 +29,12 @@ import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.mapbox.geojson.Point
-import com.mapbox.maps.MapView
 import com.mapbox.maps.plugin.annotation.annotations
 import com.mapbox.maps.plugin.annotation.generated.*
 import com.mapbox.maps.plugin.attribution.attribution
 import com.mapbox.maps.plugin.compass.compass
 import com.mapbox.maps.plugin.logo.logo
 import com.mapbox.maps.plugin.scalebar.scalebar
-import com.mtcleo05.planethistory.core.ext.getMarkerType
 import com.mtcleo05.planethistory.core.ext.loadImage
 import com.mtcleo05.planethistory.core.ext.mapToJsonObject
 import com.mtcleo05.planethistory.core.ext.mapToMarkerUI
@@ -58,7 +56,6 @@ class MainActivity : AppCompatActivity() {
 
     private var latitude: Double = 0.0
     private var longitude: Double = 0.0
-    private var mapView: MapView? = null
     private var pointAnnotationManager: PointAnnotationManager? = null
     private var currentLocationMarker: PointAnnotation? = null
     private var isFirstLocationUpdate = true
@@ -249,25 +246,19 @@ class MainActivity : AppCompatActivity() {
                     if (!query.isNullOrBlank()) {
                         (getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).hideSoftInputFromWindow(binding.searchView.windowToken, 0)
 
-                        //TODO: Refactor logic
-                        for (markerElement in markerManager.getAllPointAnnotationInPointMap()) {
-                            markerElement.getData()?.asJsonObject?.mapToMarkerUI()?.let {markerUI ->
-                                if (markerUI.markerName == query.lowercase()) {
-                                    if (!SearchResult.contains(markerElement))
-                                        SearchResult.add(markerElement)
-                                }
-                                if (markerUI.type == query.getMarkerType()) {
-                                    if (!SearchResult.contains(markerElement))
-                                        SearchResult.add(markerElement)
+                        deletePointAnnotation(SearchResult)
+                        SearchResult.clear()
+
+                        for (point in markerManager.getAllPointAnnotationInPointMap()) {
+                            val marker = point.getData()?.asJsonObject?.mapToMarkerUI()
+                            if (marker?.markerName?.lowercase() == query.lowercase()) {
+                                if(!SearchResult.contains(point)) {
+                                    SearchResult.add(point)
                                 }
                             }
                         }
 
-                        for (deleteMarker in markerManager.getAllPointAnnotationInPointMap()){
-                            if(!(SearchResult.contains(deleteMarker))){
-                                deletePositionMarker(deleteMarker)
-                            }
-                        }
+                        addPointAnnotation(SearchResult)
 
                         changeCameraPosition()
                     }
@@ -275,6 +266,10 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 override fun onQueryTextChange(newText: String?): Boolean {
+                    if (!newText.isNullOrBlank()) {
+                        val filteredMarkers = markerManager.getFilteredMarkersListByString(newText)
+                        // TODO: Create a Recycle view using filteredMarkers as dataSource (click on item, you should change camera position)
+                    }
                     return true
                 }
             })
@@ -354,9 +349,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun deletePointAnnotation(map: Map<MarkerTypes, PointAnnotation>) {
-        map.forEach {
-            pointAnnotationManager?.delete(it.value)
+    private fun deletePointAnnotation(collection: Collection<PointAnnotation>) {
+        collection.forEach {
+            pointAnnotationManager?.delete(it)
         }
     }
 
@@ -366,35 +361,35 @@ class MainActivity : AppCompatActivity() {
                 if (monumentiEnabled)
                     addPointAnnotation(markerManager.getPointByType(MarkerTypes.MONUMENTS).values)
                 else
-                    deletePointAnnotation(markerManager.getPointByType(MarkerTypes.MONUMENTS))
+                    deletePointAnnotation(markerManager.getPointByType(MarkerTypes.MONUMENTS).values)
                 monumentiEnabled = !monumentiEnabled
             }
             MarkerTypes.CTM-> {
                 if (ctmEnabled)
                     addPointAnnotation(markerManager.getPointByType(MarkerTypes.CTM).values)
                 else
-                    deletePointAnnotation(markerManager.getPointByType(MarkerTypes.CTM))
+                    deletePointAnnotation(markerManager.getPointByType(MarkerTypes.CTM).values)
                 ctmEnabled = !ctmEnabled
             }
             MarkerTypes.CURIOSITY-> {
                 if (curiositaEnabled)
                     addPointAnnotation(markerManager.getPointByType(MarkerTypes.CURIOSITY).values)
                 else
-                    deletePointAnnotation(markerManager.getPointByType(MarkerTypes.CURIOSITY))
+                    deletePointAnnotation(markerManager.getPointByType(MarkerTypes.CURIOSITY).values)
                 curiositaEnabled = !curiositaEnabled
             }
             MarkerTypes.PARKS-> {
                 if (parchiEnabled)
                     addPointAnnotation(markerManager.getPointByType(MarkerTypes.PARKS).values)
                 else
-                    deletePointAnnotation(markerManager.getPointByType(MarkerTypes.PARKS))
+                    deletePointAnnotation(markerManager.getPointByType(MarkerTypes.PARKS).values)
                 parchiEnabled = !parchiEnabled
             }
             MarkerTypes.AGES-> {
                 if (epocheEnabled)
                     addPointAnnotation(markerManager.getPointByType(MarkerTypes.AGES).values)
                 else
-                    deletePointAnnotation(markerManager.getPointByType(MarkerTypes.AGES))
+                    deletePointAnnotation(markerManager.getPointByType(MarkerTypes.AGES).values)
                 epocheEnabled = !epocheEnabled
             }
             MarkerTypes.NOTYPE -> { }
@@ -668,32 +663,22 @@ class MainActivity : AppCompatActivity() {
      * Search
      */
 
-
-
     private fun changeCameraPosition() {
-        var maxLatitude = Double.MIN_VALUE
-        var minLatitude = Double.MAX_VALUE
-        var maxLongitude = Double.MIN_VALUE
-        var minLongitude = Double.MAX_VALUE
+        var maxLatitude = 90.0
+        var minLatitude = -90.0
+        var maxLongitude = 180.0
+        var minLongitude = -180.0
 
         for (markerElement in SearchResult) {
-            val markerData = markerElement.getData()
+            val markerData = markerElement.getData()?.asJsonObject?.mapToMarkerUI() ?: return
 
-            val latitude = markerData?.asJsonObject?.get("lat")?.asDouble!!
-            val longitude = markerData.asJsonObject?.get("lng")?.asDouble!!
+            val latitude = markerData.lat
+            val longitude = markerData.lng
 
-            if (latitude > maxLatitude) {
-                maxLatitude = latitude
-            }
-            if (latitude < minLatitude) {
-                minLatitude = latitude
-            }
-            if (longitude > maxLongitude) {
-                maxLongitude = longitude
-            }
-            if (longitude < minLongitude) {
-                minLongitude = longitude
-            }
+            maxLatitude = if (latitude > maxLatitude) latitude else maxLatitude
+            minLatitude = if (latitude < minLatitude) latitude else minLatitude
+            maxLongitude = if (longitude > maxLongitude) longitude else maxLongitude
+            minLongitude = if (longitude < minLongitude) longitude else minLongitude
         }
 
         val optimalLatitude = (maxLatitude + minLatitude) / 2
@@ -701,14 +686,16 @@ class MainActivity : AppCompatActivity() {
 
         val distance = calculateDistance(maxLatitude, maxLongitude, minLatitude, minLongitude)
 
-        val zoomLevel = calculateZoomLevel(distance, 13.0)
+        val zoomLevel = calculateZoomLevel(distance, 3.0)
 
-        mapView?.getMapboxMap()?.setCamera(
-            com.mapbox.maps.CameraOptions.Builder()
-                .center(Point.fromLngLat(optimalLongitude, optimalLatitude))
-                .zoom(zoomLevel)
-                .build()
-        )
+        binding.mapView.run {
+            getMapboxMap().setCamera(
+                com.mapbox.maps.CameraOptions.Builder()
+                    .center(Point.fromLngLat(optimalLongitude, optimalLatitude))
+                    .zoom(zoomLevel)
+                    .build()
+            )
+        }
     }
 
     private fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {

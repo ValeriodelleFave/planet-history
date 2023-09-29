@@ -49,4 +49,9 @@ class MarkerManager {
         return pointMap.values
     }
 
+    fun getFilteredMarkersListByString(filter: String): List<MarkerUI> {
+        return _markersList.filter { it.markerName.lowercase().startsWith(filter.lowercase()) }
+    }
+
+
 }
