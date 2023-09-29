@@ -1,5 +1,8 @@
 package com.mtcleo05.planethistory.core.ext
 
+import android.content.Context
+import android.widget.ImageView
+import com.bumptech.glide.Glide
 import com.google.gson.JsonObject
 import com.mtcleo05.planethistory.core.model.Marker
 import com.mtcleo05.planethistory.core.model.MarkerTypes
@@ -55,6 +58,12 @@ fun String.getMarkerType(): MarkerTypes{
         AGES_LABEL -> MarkerTypes.AGES
         else -> MarkerTypes.NOTYPE
     }
+}
+
+fun ImageView.loadImage(context: Context, url: String){
+    Glide.with(context)
+        .load(url)
+        .into(this)
 }
 
 

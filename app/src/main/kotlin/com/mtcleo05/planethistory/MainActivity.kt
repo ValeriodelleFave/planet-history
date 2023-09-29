@@ -25,6 +25,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.core.widget.doOnTextChanged
+import com.bumptech.glide.Glide
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
@@ -39,6 +40,7 @@ import com.mapbox.maps.plugin.attribution.attribution
 import com.mapbox.maps.plugin.compass.compass
 import com.mapbox.maps.plugin.logo.logo
 import com.mapbox.maps.plugin.scalebar.scalebar
+import com.mtcleo05.planethistory.core.ext.loadImage
 import com.mtcleo05.planethistory.core.ext.mapToJsonObject
 import com.mtcleo05.planethistory.core.ext.mapToMarkerUI
 import com.mtcleo05.planethistory.core.manager.ImageManager
@@ -532,7 +534,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun createImageView(image: String) : ImageView {
         val imageView = ImageView(applicationContext)
-        DownloadImageTask(imageView).execute(image)
         var layoutParams = imageView.layoutParams
 
         if(layoutParams == null){
@@ -542,9 +543,13 @@ class MainActivity : AppCompatActivity() {
         imageView.layoutParams = layoutParams
         imageView.setPadding(10, 0, 10, 0)
         imageView.setOnClickListener {
-            binding.imageFullScreen.imageLayout.isVisible = true
-            DownloadImageTask(binding.imageFullScreen.imageFullScreen).execute(image)
+            with(binding.imageFullScreen){
+                imageLayout.isVisible = true
+                imageFullScreen.loadImage(this@MainActivity,image)
+            }
         }
+
+        imageView.loadImage(this@MainActivity,image)
 
         return imageView
     }
