@@ -20,18 +20,14 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
-import androidx.core.widget.doOnTextChanged
-import com.bumptech.glide.Glide
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.gson.JsonElement
 import com.mapbox.geojson.Point
 import com.mapbox.maps.MapView
 import com.mapbox.maps.plugin.annotation.annotations
@@ -49,7 +45,6 @@ import com.mtcleo05.planethistory.core.manager.MarkerManager
 import com.mtcleo05.planethistory.core.model.MarkerTypes
 import com.mtcleo05.planethistory.core.model.MarkerUI
 import com.mtcleo05.planethistory.databinding.ActivityMainBinding
-import java.io.IOException
 import kotlin.math.abs
 import kotlin.math.asin
 import kotlin.math.cos
@@ -78,7 +73,6 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var locationRequest: LocationRequest
     private lateinit var locationCallback: LocationCallback
-    private lateinit var searchBarEditText: EditText
     private lateinit var binding : ActivityMainBinding
 
     // Override Methods
@@ -105,6 +99,7 @@ class MainActivity : AppCompatActivity() {
         val display = windowManager.defaultDisplay
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            @Suppress("DEPRECATION")
             display.getRealMetrics(displayMetrics)
         } else {
             @Suppress("DEPRECATION")
@@ -231,9 +226,13 @@ class MainActivity : AppCompatActivity() {
         setBtnCenterMap()
         setSearchBarEditText()
 
+        @Suppress("DEPRECATION")
         locationRequest = LocationRequest.create().apply {
+            @Suppress("DEPRECATION")
             interval = LOCATION_UPDATE_INTERVAL
+            @Suppress("DEPRECATION")
             fastestInterval = LOCATION_UPDATE_FASTEST_INTERVAL
+            @Suppress("DEPRECATION")
             priority = LocationRequest.PRIORITY_HIGH_ACCURACY
         }
         locationCallback = object : LocationCallback() {
@@ -270,13 +269,12 @@ class MainActivity : AppCompatActivity() {
                             }
                         }
 
-                        SearchResultCameraPosition()
+                        changeCameraPosition()
                     }
                     return true
                 }
 
                 override fun onQueryTextChange(newText: String?): Boolean {
-                    if (!newText.isNullOrBlank()) { }
                     return true
                 }
             })
@@ -514,7 +512,7 @@ class MainActivity : AppCompatActivity() {
                 (buttonWeb.background as GradientDrawable).setColor(color)
                 (buttonCall.background as GradientDrawable).setColor(color)
                 (buttonTravel.background as GradientDrawable).setColor(color)
-                nameTextview.text = markerUI?.markerName
+                nameTextview.text = markerUI.markerName
             }
         }
 
@@ -530,8 +528,8 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 detailDescription.text = markerUI.description
-                detailTags.text = markerUI.tags?.joinToString(", ")
-                detailMainTag.text = markerUI.type?.name
+                detailTags.text = markerUI.tags.joinToString(", ")
+                detailMainTag.text = markerUI.type.name
 
                 markerUI.images.let {
                     for(i in it.indices){
@@ -672,7 +670,7 @@ class MainActivity : AppCompatActivity() {
 
 
 
-    private fun SearchResultCameraPosition() {
+    private fun changeCameraPosition() {
         var maxLatitude = Double.MIN_VALUE
         var minLatitude = Double.MAX_VALUE
         var maxLongitude = Double.MIN_VALUE
@@ -722,9 +720,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun calculateZoomLevel(distance: Double, maxZoom: Double): Double {
-        val defaultZoom = 15.0 // Adjust this value as needed
-        val zoomFactor = 156412.0 // Adjust this value as needed
-        val zoomLevel = defaultZoom - log2(distance) + log2(zoomFactor)
+        val zoomLevel = DEFAULT_ZOOM_VALUE - log2(distance) + log2(ZOOM_FACTORY_VALUE)
         return zoomLevel.coerceAtMost(maxZoom)
     }
 
@@ -733,5 +729,7 @@ class MainActivity : AppCompatActivity() {
         private const val LOCATION_UPDATE_FASTEST_INTERVAL: Long = 5000 // 5 seconds
         private const val PCT = 0.00002 // POSITION CHANGE THRESHOLD
         private const val LOCATION_PERMISSION_REQUEST_CODE = 177013
+        private const val DEFAULT_ZOOM_VALUE = 15.0 // Adjust this value as needed
+        private const val ZOOM_FACTORY_VALUE = 156412.0 // Adjust this value as needed
     }
 }
