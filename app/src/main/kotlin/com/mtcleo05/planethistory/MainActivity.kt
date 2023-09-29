@@ -72,7 +72,6 @@ class MainActivity : AppCompatActivity() {
     private var markerManager = MarkerManager()
     private var imageManager = ImageManager()
 
-    private lateinit var imageLayout: CoordinatorLayout
     private lateinit var locationRequest: LocationRequest
     private lateinit var locationCallback: LocationCallback
     private lateinit var searchBarEditText: EditText
@@ -517,21 +516,34 @@ class MainActivity : AppCompatActivity() {
 
                 markerUI.images.let {
                     for(i in it.indices){
-                        val imageView = ImageView(applicationContext)
-                        DownloadImageTask(imageView).execute(it[i])
-                        imageView.layoutParams.height = 500
-                        imageView.layoutParams.width = 500
-                        imageView.setPadding(10, 0, 10, 0)
-                        imageView.setOnClickListener {
-                            imageLayout.visibility = View.VISIBLE
-                            DownloadImageTask(imageFullScreen.imageFullScreen).execute(markerUI.images[i])
-                        }
+                        val imageView = createImageView(it[i])
                         imageContainer.addView(imageView)
+
                     }
                 }
             }
         }
     }
+
+    private fun createImageView(image: String) : ImageView {
+        val imageView = ImageView(applicationContext)
+        DownloadImageTask(imageView).execute(image)
+        var layoutParams = imageView.layoutParams
+
+        if(layoutParams == null){
+            layoutParams = ViewGroup.LayoutParams(500,500)
+        }
+
+        imageView.layoutParams = layoutParams
+        imageView.setPadding(10, 0, 10, 0)
+        imageView.setOnClickListener {
+            binding.imageFullScreen.imageLayout.isVisible = true
+            DownloadImageTask(binding.imageFullScreen.imageFullScreen).execute(image)
+        }
+
+        return imageView
+    }
+
     private fun centerMapOnUserPosition(zoom: Double = 13.0) {
         binding.mapView.run {
             getMapboxMap().setCamera(
